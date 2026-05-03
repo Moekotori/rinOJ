@@ -1,0 +1,16 @@
+{
+  "shell": {
+    "title": "Rin OJ",
+    "subtitle": "题库、比赛、提交、讨论，从第一屏开始就是在线评测系统。"
+  },
+  "problemIntake": {
+    "title": "题目导入",
+    "teacher": "教师快速传题",
+    "student": "学生投稿草稿"
+  },
+  "submission": {
+    "title": "快速提交",
+    "language": "语言",
+    "submit": "提交到评测队列"
+  }
+}

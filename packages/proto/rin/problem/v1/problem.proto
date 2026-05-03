@@ -1,0 +1,154 @@
+syntax = "proto3";
+
+package rin.problem.v1;
+
+option go_package = "github.com/rin-oj/rin-oj/packages/sdk-go/rin/problem/v1;problemv1";
+
+service ProblemService {
+  rpc CreateProblemDraft(CreateProblemDraftRequest) returns (ProblemDraft);
+  rpc ValidateProblemImport(ValidateProblemImportRequest) returns (ImportWizard);
+  rpc TeacherQuickUpload(TeacherQuickUploadRequest) returns (ProblemDraft);
+  rpc StudentDraftSubmission(StudentDraftSubmissionRequest) returns (ProblemDraft);
+  rpc CreatePresignedUpload(CreatePresignedUploadRequest) returns (CreatePresignedUploadResponse);
+  rpc PublishProblem(PublishProblemRequest) returns (Problem);
+  rpc GetProblem(GetProblemRequest) returns (Problem);
+  rpc ListProblems(ListProblemsRequest) returns (ListProblemsResponse);
+}
+
+enum ProblemVisibility {
+  PROBLEM_VISIBILITY_UNSPECIFIED = 0;
+  PROBLEM_VISIBILITY_PRIVATE = 1;
+  PROBLEM_VISIBILITY_REVIEW = 2;
+  PROBLEM_VISIBILITY_PUBLIC = 3;
+  PROBLEM_VISIBILITY_CONTEST_ONLY = 4;
+}
+
+enum ProblemType {
+  PROBLEM_TYPE_UNSPECIFIED = 0;
+  PROBLEM_TYPE_TRADITIONAL = 1;
+  PROBLEM_TYPE_SPECIAL_JUDGE = 2;
+  PROBLEM_TYPE_INTERACTIVE = 3;
+  PROBLEM_TYPE_SUBMIT_ANSWER = 4;
+  PROBLEM_TYPE_OUTPUT_ONLY = 5;
+  PROBLEM_TYPE_COMMUNICATION = 6;
+}
+
+message Problem {
+  string problem_id = 1;
+  string slug = 2;
+  string title = 3;
+  ProblemType type = 4;
+  ProblemVisibility visibility = 5;
+  int32 difficulty = 6;
+  repeated string tags = 7;
+  repeated LocalizedStatement statements = 8;
+  string owner_user_id = 9;
+  int64 version = 10;
+}
+
+message LocalizedStatement {
+  string locale = 1;
+  string title = 2;
+  string markdown = 3;
+}
+
+message ProblemDraft {
+  string draft_id = 1;
+  string problem_id = 2;
+  string owner_user_id = 3;
+  ProblemVisibility visibility = 4;
+  ImportWizard import_wizard = 5;
+}
+
+message CreateProblemDraftRequest {
+  string actor_id = 1;
+  string title = 2;
+  ProblemType type = 3;
+  repeated LocalizedStatement statements = 4;
+}
+
+message ValidateProblemImportRequest {
+  string actor_id = 1;
+  string upload_object_key = 2;
+  string source_filename = 3;
+}
+
+message TeacherQuickUploadRequest {
+  string teacher_id = 1;
+  string class_id = 2;
+  string upload_object_key = 3;
+  bool publish_immediately = 4;
+  bool request_admin_review = 5;
+}
+
+message StudentDraftSubmissionRequest {
+  string student_id = 1;
+  string class_id = 2;
+  string upload_object_key = 3;
+  string note_to_reviewer = 4;
+}
+
+message ImportWizard {
+  string import_id = 1;
+  string detected_title = 2;
+  ProblemType detected_type = 3;
+  repeated LocalizedStatement statements = 4;
+  repeated SampleCase samples = 5;
+  repeated ImportValidation validations = 6;
+  repeated string next_actions = 7;
+}
+
+message SampleCase {
+  string name = 1;
+  string input = 2;
+  string output = 3;
+}
+
+message ImportValidation {
+  string code = 1;
+  string severity = 2;
+  string message = 3;
+  string path = 4;
+}
+
+message CreatePresignedUploadRequest {
+  string actor_id = 1;
+  string filename = 2;
+  string content_type = 3;
+  int64 size_bytes = 4;
+  int32 part_count = 5;
+}
+
+message CreatePresignedUploadResponse {
+  string object_key = 1;
+  repeated PresignedUploadPart parts = 2;
+  int64 expires_at_unix = 3;
+}
+
+message PresignedUploadPart {
+  int32 part_number = 1;
+  string upload_url = 2;
+  map<string, string> headers = 3;
+}
+
+message PublishProblemRequest {
+  string actor_id = 1;
+  string draft_id = 2;
+}
+
+message GetProblemRequest {
+  string problem_id = 1;
+  string locale = 2;
+}
+
+message ListProblemsRequest {
+  string cursor = 1;
+  int32 page_size = 2;
+  repeated string tags = 3;
+  string search = 4;
+}
+
+message ListProblemsResponse {
+  repeated Problem problems = 1;
+  string next_cursor = 2;
+}

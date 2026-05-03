@@ -1,0 +1,82 @@
+syntax = "proto3";
+
+package rin.contest.v1;
+
+option go_package = "github.com/rin-oj/rin-oj/packages/sdk-go/rin/contest/v1;contestv1";
+
+service ContestService {
+  rpc CreateContest(CreateContestRequest) returns (Contest);
+  rpc RegisterContest(RegisterContestRequest) returns (ContestRegistration);
+  rpc GetScoreboard(GetScoreboardRequest) returns (Scoreboard);
+  rpc StreamScoreboard(StreamScoreboardRequest) returns (stream ScoreboardEvent);
+}
+
+enum ContestMode {
+  CONTEST_MODE_UNSPECIFIED = 0;
+  CONTEST_MODE_ACM = 1;
+  CONTEST_MODE_IOI = 2;
+  CONTEST_MODE_OI = 3;
+  CONTEST_MODE_CODEFORCES = 4;
+  CONTEST_MODE_ATCODER = 5;
+}
+
+message CreateContestRequest {
+  string actor_id = 1;
+  string title = 2;
+  ContestMode mode = 3;
+  int64 starts_at_unix = 4;
+  int64 ends_at_unix = 5;
+  repeated string problem_ids = 6;
+}
+
+message Contest {
+  string contest_id = 1;
+  string title = 2;
+  ContestMode mode = 3;
+  int64 starts_at_unix = 4;
+  int64 ends_at_unix = 5;
+  bool scoreboard_frozen = 6;
+}
+
+message RegisterContestRequest {
+  string actor_id = 1;
+  string contest_id = 2;
+  string invite_code = 3;
+}
+
+message ContestRegistration {
+  string contest_id = 1;
+  string actor_id = 2;
+  string team_id = 3;
+  int64 registered_at_unix = 4;
+}
+
+message GetScoreboardRequest {
+  string contest_id = 1;
+  string cursor = 2;
+  int32 page_size = 3;
+}
+
+message Scoreboard {
+  string contest_id = 1;
+  repeated ScoreboardRow rows = 2;
+  string next_cursor = 3;
+}
+
+message ScoreboardRow {
+  string actor_id = 1;
+  string display_name = 2;
+  int64 rank = 3;
+  int64 score = 4;
+  int64 penalty = 5;
+}
+
+message StreamScoreboardRequest {
+  string contest_id = 1;
+}
+
+message ScoreboardEvent {
+  string contest_id = 1;
+  string reason = 2;
+  repeated ScoreboardRow changed_rows = 3;
+}

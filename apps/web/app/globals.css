@@ -1,0 +1,313 @@
+@import "tailwindcss";
+
+:root {
+  color-scheme: light;
+  --rin-sakura-white: #fdfbf7;
+  --rin-haze-pink: #ffd3dc;
+  --rin-sky-blue: #a8d8ea;
+  --rin-lavender: #c5b4e3;
+  --rin-night-purple: #1a1530;
+  --rin-ink: #2b2638;
+  --rin-mint: #b9e8d5;
+  --rin-gold: #f8d98b;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+::selection {
+  background: rgba(255, 211, 220, 0.82);
+  color: #1a1530;
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background:
+    radial-gradient(circle at 4% 10%, rgba(255, 211, 220, 0.42), transparent 28rem),
+    radial-gradient(circle at 94% 18%, rgba(168, 216, 234, 0.4), transparent 30rem),
+    linear-gradient(135deg, rgba(197, 180, 227, 0.14) 0 1px, transparent 1px 22px),
+    linear-gradient(180deg, #fffdfb 0%, #f7fbff 48%, #fff7fb 100%);
+  color: var(--rin-ink);
+  font-family: Inter, "Noto Sans SC", system-ui, sans-serif;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+button,
+a,
+input,
+textarea,
+select {
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 3px solid rgba(168, 216, 234, 0.72);
+  outline-offset: 3px;
+}
+
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.55);
+}
+
+::-webkit-scrollbar-thumb {
+  border: 3px solid rgba(255, 255, 255, 0.65);
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(255, 211, 220, 0.95), rgba(168, 216, 234, 0.85));
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, rgba(236, 72, 153, 0.65), rgba(14, 165, 233, 0.65));
+}
+
+.rin-page {
+  position: relative;
+  isolation: isolate;
+}
+
+.rin-page::before {
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+  content: "";
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.55) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.55) 1px, transparent 1px);
+  background-size: 36px 36px;
+  mask-image: linear-gradient(180deg, black 0%, transparent 78%);
+}
+
+/* Decorative petals are CSS-only so deployment stays asset-light. */
+.rin-petal-field {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.rin-petal {
+  position: absolute;
+  width: 10px;
+  height: 16px;
+  border-radius: 10px 10px 10px 2px;
+  background: linear-gradient(135deg, rgba(255, 211, 220, 0.92), rgba(255, 255, 255, 0.85));
+  box-shadow: 0 8px 22px rgba(255, 151, 174, 0.24);
+  transform: rotate(24deg);
+  animation: rin-petal-drift 16s linear infinite;
+}
+
+.rin-petal:nth-child(1) {
+  top: -4%;
+  left: 8%;
+  animation-delay: -2s;
+}
+
+.rin-petal:nth-child(2) {
+  top: -8%;
+  left: 32%;
+  animation-delay: -8s;
+  animation-duration: 20s;
+}
+
+.rin-petal:nth-child(3) {
+  top: -3%;
+  left: 62%;
+  animation-delay: -5s;
+  animation-duration: 18s;
+}
+
+.rin-petal:nth-child(4) {
+  top: -10%;
+  left: 84%;
+  animation-delay: -11s;
+  animation-duration: 22s;
+}
+
+.rin-card {
+  border-color: rgba(255, 211, 220, 0.7) !important;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(255, 255, 255, 0.82)),
+    radial-gradient(circle at 0 0, rgba(168, 216, 234, 0.18), transparent 18rem) !important;
+  box-shadow:
+    0 20px 52px rgba(58, 45, 88, 0.1),
+    0 1px 0 rgba(255, 255, 255, 0.8) inset !important;
+  backdrop-filter: blur(18px);
+  transition:
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    transform 180ms ease;
+}
+
+.rin-card:hover {
+  transform: translateY(-1px);
+  border-color: rgba(255, 178, 195, 0.92) !important;
+  box-shadow:
+    0 24px 58px rgba(58, 45, 88, 0.12),
+    0 1px 0 rgba(255, 255, 255, 0.86) inset !important;
+}
+
+.rin-workbench-panel {
+  border: 1px solid rgba(255, 211, 220, 0.68);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.88)),
+    radial-gradient(circle at 100% 0, rgba(168, 216, 234, 0.12), transparent 18rem);
+  box-shadow: 0 18px 48px rgba(58, 45, 88, 0.09);
+  transition:
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    transform 180ms ease;
+}
+
+.rin-workbench-panel:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 22px 58px rgba(58, 45, 88, 0.12);
+}
+
+.rin-section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #64748b;
+  font-size: 0.875rem;
+  font-weight: 800;
+}
+
+.rin-soft-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  border-radius: 0.65rem;
+  background: rgba(255, 255, 255, 0.82);
+  color: #334155;
+  font-weight: 800;
+  box-shadow: 0 8px 18px rgba(58, 45, 88, 0.06);
+}
+
+.rin-soft-button:hover {
+  transform: translateY(-1px);
+  border-color: rgba(255, 211, 220, 0.95);
+  background: rgba(255, 241, 245, 0.9);
+  color: #be185d;
+}
+
+.rin-kana-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border: 1px solid rgba(255, 211, 220, 0.95);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.72);
+  color: #b54769;
+  font-family: "Klee One", "Noto Sans SC", system-ui, sans-serif;
+  font-size: 0.75rem;
+  font-weight: 800;
+  padding: 0.25rem 0.65rem;
+}
+
+.rin-hero-strip {
+  border: 1px solid rgba(255, 211, 220, 0.95);
+  background:
+    linear-gradient(90deg, rgba(255, 211, 220, 0.72), rgba(168, 216, 234, 0.48), rgba(197, 180, 227, 0.38)),
+    rgba(255, 255, 255, 0.62);
+  box-shadow: 0 18px 42px rgba(197, 180, 227, 0.18);
+}
+
+.rin-code-editor {
+  background: #fffbfe;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.85),
+    0 18px 44px rgba(197, 180, 227, 0.16);
+}
+
+.rin-code-editor .monaco-editor,
+.rin-code-editor .monaco-editor-background,
+.rin-code-editor .monaco-editor .inputarea.ime-input,
+.rin-code-editor .monaco-editor .view-line,
+.rin-code-editor .monaco-editor .view-line span {
+  font-family:
+    "Cascadia Mono",
+    "Maple Mono NF CN",
+    "Maple Mono",
+    "Sarasa Mono SC",
+    "LXGW WenKai Mono",
+    "JetBrains Mono",
+    "Fira Code",
+    Consolas,
+    monospace !important;
+  font-feature-settings: "liga" 1, "calt" 1;
+  letter-spacing: 0.2px;
+}
+
+.rin-code-editor .monaco-editor .margin {
+  background: #fff6fa;
+}
+
+.rin-code-editor .monaco-editor .suggest-widget {
+  border-radius: 12px;
+  box-shadow: 0 18px 42px rgba(43, 38, 56, 0.14);
+  overflow: hidden;
+}
+
+@keyframes rin-petal-drift {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, -20px, 0) rotate(18deg);
+  }
+
+  12% {
+    opacity: 0.88;
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate3d(34px, 108vh, 0) rotate(220deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .rin-petal {
+    display: none;
+  }
+}

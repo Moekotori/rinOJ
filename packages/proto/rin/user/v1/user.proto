@@ -1,0 +1,66 @@
+syntax = "proto3";
+
+package rin.user.v1;
+
+option go_package = "github.com/rin-oj/rin-oj/packages/sdk-go/rin/user/v1;userv1";
+
+service UserService {
+  rpc Register(RegisterRequest) returns (AuthSession);
+  rpc Login(LoginRequest) returns (AuthSession);
+  rpc Refresh(RefreshRequest) returns (AuthSession);
+  rpc GetProfile(GetProfileRequest) returns (UserProfile);
+  rpc CheckPermission(CheckPermissionRequest) returns (CheckPermissionResponse);
+}
+
+message RegisterRequest {
+  string email = 1;
+  string username = 2;
+  string password = 3;
+  string locale = 4;
+}
+
+message LoginRequest {
+  string login = 1;
+  string password = 2;
+  string totp_code = 3;
+}
+
+message RefreshRequest {
+  string refresh_token = 1;
+}
+
+message AuthSession {
+  string user_id = 1;
+  string access_token = 2;
+  string refresh_token = 3;
+  int64 access_expires_at_unix = 4;
+  int64 refresh_expires_at_unix = 5;
+}
+
+message GetProfileRequest {
+  string user_id = 1;
+}
+
+message UserProfile {
+  string user_id = 1;
+  string username = 2;
+  string display_name = 3;
+  string avatar_url = 4;
+  string banner_url = 5;
+  string bio = 6;
+  string locale = 7;
+  int64 accepted_count = 8;
+  int64 rating = 9;
+}
+
+message CheckPermissionRequest {
+  string actor_id = 1;
+  string action = 2;
+  string resource = 3;
+  map<string, string> attributes = 4;
+}
+
+message CheckPermissionResponse {
+  bool allowed = 1;
+  string reason = 2;
+}

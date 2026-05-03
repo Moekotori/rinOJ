@@ -1,0 +1,16 @@
+{
+  "shell": {
+    "title": "Rin OJ",
+    "subtitle": "Problems, contests, submissions, and discussions from the first screen."
+  },
+  "problemIntake": {
+    "title": "Problem Intake",
+    "teacher": "Teacher Quick Upload",
+    "student": "Student Draft Submission"
+  },
+  "submission": {
+    "title": "Quick Submit",
+    "language": "Language",
+    "submit": "Submit to Judge Queue"
+  }
+}

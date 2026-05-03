@@ -1,0 +1,44 @@
+syntax = "proto3";
+
+package rin.event.v1;
+
+option go_package = "github.com/rin-oj/rin-oj/packages/sdk-go/rin/event/v1;eventv1";
+
+service EventBusService {
+  rpc Publish(EventEnvelope) returns (PublishEventResponse);
+  rpc Subscribe(SubscribeRequest) returns (stream EventEnvelope);
+}
+
+message EventEnvelope {
+  string id = 1;
+  string type = 2;
+  int32 version = 3;
+  int64 occurred_at_unix = 4;
+  string actor_id = 5;
+  string subject_id = 6;
+  string trace_id = 7;
+  bytes payload_json = 8;
+}
+
+message PublishEventResponse {
+  string event_id = 1;
+}
+
+message SubscribeRequest {
+  string consumer = 1;
+  repeated string topics = 2;
+}
+
+// Initial event names:
+// user.registered
+// problem.draft_created
+// problem.import_validated
+// problem.published
+// submission.queued
+// submission.running
+// submission.judged
+// contest.started
+// contest.scoreboard_frozen
+// contest.scoreboard_unfrozen
+// notification.created
+// webhook.delivery_failed

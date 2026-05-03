@@ -1,0 +1,10 @@
+go 1.23.0
+
+use (
+	./packages/sdk-go
+	./services/gateway
+	./services/judge-dispatcher
+	./services/problem-service
+	./services/submission-service
+	./services/user-service
+)

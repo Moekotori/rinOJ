@@ -1,0 +1,578 @@
+openapi: 3.1.0
+info:
+  title: Rin OJ Gateway API
+  version: 0.1.0
+  description: External HTTP contract for Rin OJ gateway.
+servers:
+  - url: https://api.rin-oj.local
+security:
+  - bearerAuth: []
+paths:
+  /v1/auth/register:
+    post:
+      operationId: register
+      tags: [Auth]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+      responses:
+        "201":
+          description: Created session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthSession"
+  /v1/auth/login:
+    post:
+      operationId: login
+      tags: [Auth]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Authenticated session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthSession"
+  /v1/problems:
+    get:
+      operationId: listProblems
+      tags: [Problems]
+      parameters:
+        - $ref: "#/components/parameters/cursor"
+        - $ref: "#/components/parameters/pageSize"
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: tag
+          in: query
+          schema:
+            type: array
+            items:
+              type: string
+      responses:
+        "200":
+          description: Cursor-paginated problem list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProblemList"
+  /v1/problems/{problemId}:
+    get:
+      operationId: getProblem
+      tags: [Problems]
+      parameters:
+        - name: problemId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: locale
+          in: query
+          schema:
+            type: string
+            enum: [zh-CN, en-US, ja-JP]
+      responses:
+        "200":
+          description: Problem detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /v1/problem-intake/uploads:
+    post:
+      operationId: createProblemIntakeUpload
+      tags: [ProblemIntake]
+      summary: Create pre-signed multipart URLs for a problem ZIP or large test package.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateUploadRequest"
+      responses:
+        "201":
+          description: Upload URLs
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateUploadResponse"
+  /v1/problem-intake/imports:validate:
+    post:
+      operationId: validateProblemImport
+      tags: [ProblemIntake]
+      summary: Run the ImportWizard validation pass on an uploaded package.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ValidateProblemImportRequest"
+      responses:
+        "200":
+          description: ImportWizard preview and validation result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImportWizard"
+  /v1/problem-intake/teacher-quick-upload:
+    post:
+      operationId: teacherQuickUpload
+      tags: [ProblemIntake]
+      summary: Teacher Quick Upload creates a private or review-ready problem draft from one guided upload.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TeacherQuickUploadRequest"
+      responses:
+        "201":
+          description: Problem draft
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProblemDraft"
+  /v1/problem-intake/student-drafts:
+    post:
+      operationId: studentDraftSubmission
+      tags: [ProblemIntake]
+      summary: Student Draft Submission lets students propose a problem for teacher/admin review.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StudentDraftSubmissionRequest"
+      responses:
+        "201":
+          description: Student-owned draft
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProblemDraft"
+  /v1/submissions:
+    post:
+      operationId: createSubmission
+      tags: [Submissions]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSubmissionRequest"
+      responses:
+        "202":
+          description: Queued submission
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Submission"
+    get:
+      operationId: listSubmissions
+      tags: [Submissions]
+      parameters:
+        - $ref: "#/components/parameters/cursor"
+        - $ref: "#/components/parameters/pageSize"
+        - name: problemId
+          in: query
+          schema:
+            type: string
+        - name: actorId
+          in: query
+          schema:
+            type: string
+        - name: contestId
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Cursor-paginated submission list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SubmissionList"
+  /v1/submissions/{submissionId}:
+    get:
+      operationId: getSubmission
+      tags: [Submissions]
+      parameters:
+        - name: submissionId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Submission detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Submission"
+  /v1/submissions/{submissionId}/events:
+    get:
+      operationId: streamSubmissionEvents
+      tags: [Submissions]
+      summary: WebSocket stream for one submission status lifecycle.
+      parameters:
+        - name: submissionId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "101":
+          description: WebSocket upgrade accepted
+  /v1/contests/{contestId}/scoreboard:
+    get:
+      operationId: getScoreboard
+      tags: [Contests]
+      parameters:
+        - name: contestId
+          in: path
+          required: true
+          schema:
+            type: string
+        - $ref: "#/components/parameters/cursor"
+        - $ref: "#/components/parameters/pageSize"
+      responses:
+        "200":
+          description: Cursor-paginated scoreboard
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Scoreboard"
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    cursor:
+      name: cursor
+      in: query
+      schema:
+        type: string
+      description: Opaque pagination cursor. OFFSET pagination is not supported.
+    pageSize:
+      name: pageSize
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 30
+  schemas:
+    RegisterRequest:
+      type: object
+      required: [email, username, password]
+      properties:
+        email:
+          type: string
+          format: email
+        username:
+          type: string
+        password:
+          type: string
+          format: password
+        locale:
+          type: string
+          enum: [zh-CN, en-US, ja-JP]
+    LoginRequest:
+      type: object
+      required: [login, password]
+      properties:
+        login:
+          type: string
+        password:
+          type: string
+          format: password
+        totpCode:
+          type: string
+    AuthSession:
+      type: object
+      required: [userId, accessToken, refreshToken]
+      properties:
+        userId:
+          type: string
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+        accessExpiresAt:
+          type: string
+          format: date-time
+    Problem:
+      type: object
+      required: [problemId, title, type, visibility]
+      properties:
+        problemId:
+          type: string
+        slug:
+          type: string
+        title:
+          type: string
+        type:
+          $ref: "#/components/schemas/ProblemType"
+        visibility:
+          type: string
+          enum: [private, review, public, contest_only]
+        difficulty:
+          type: integer
+        tags:
+          type: array
+          items:
+            type: string
+        statements:
+          type: array
+          items:
+            $ref: "#/components/schemas/LocalizedStatement"
+    ProblemType:
+      type: string
+      enum: [traditional, special_judge, interactive, submit_answer, output_only, communication]
+    LocalizedStatement:
+      type: object
+      required: [locale, title, markdown]
+      properties:
+        locale:
+          type: string
+          enum: [zh-CN, en-US, ja-JP]
+        title:
+          type: string
+        markdown:
+          type: string
+    ProblemList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Problem"
+        nextCursor:
+          type: string
+    CreateUploadRequest:
+      type: object
+      required: [filename, contentType, sizeBytes, partCount]
+      properties:
+        filename:
+          type: string
+        contentType:
+          type: string
+        sizeBytes:
+          type: integer
+          format: int64
+        partCount:
+          type: integer
+    CreateUploadResponse:
+      type: object
+      required: [objectKey, parts, expiresAt]
+      properties:
+        objectKey:
+          type: string
+        parts:
+          type: array
+          items:
+            $ref: "#/components/schemas/PresignedUploadPart"
+        expiresAt:
+          type: string
+          format: date-time
+    PresignedUploadPart:
+      type: object
+      required: [partNumber, uploadUrl]
+      properties:
+        partNumber:
+          type: integer
+        uploadUrl:
+          type: string
+          format: uri
+        headers:
+          type: object
+          additionalProperties:
+            type: string
+    ValidateProblemImportRequest:
+      type: object
+      required: [uploadObjectKey, sourceFilename]
+      properties:
+        uploadObjectKey:
+          type: string
+        sourceFilename:
+          type: string
+    TeacherQuickUploadRequest:
+      type: object
+      required: [uploadObjectKey]
+      properties:
+        classId:
+          type: string
+        uploadObjectKey:
+          type: string
+        publishImmediately:
+          type: boolean
+          default: false
+        requestAdminReview:
+          type: boolean
+          default: true
+    StudentDraftSubmissionRequest:
+      type: object
+      required: [uploadObjectKey]
+      properties:
+        classId:
+          type: string
+        uploadObjectKey:
+          type: string
+        noteToReviewer:
+          type: string
+    ImportWizard:
+      type: object
+      required: [importId, validations, nextActions]
+      properties:
+        importId:
+          type: string
+        detectedTitle:
+          type: string
+        detectedType:
+          $ref: "#/components/schemas/ProblemType"
+        statements:
+          type: array
+          items:
+            $ref: "#/components/schemas/LocalizedStatement"
+        samples:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              input:
+                type: string
+              output:
+                type: string
+        validations:
+          type: array
+          items:
+            type: object
+            required: [code, severity, message]
+            properties:
+              code:
+                type: string
+              severity:
+                type: string
+                enum: [info, warning, error]
+              message:
+                type: string
+              path:
+                type: string
+        nextActions:
+          type: array
+          items:
+            type: string
+    ProblemDraft:
+      type: object
+      required: [draftId, visibility]
+      properties:
+        draftId:
+          type: string
+        problemId:
+          type: string
+        visibility:
+          type: string
+          enum: [private, review, public]
+        importWizard:
+          $ref: "#/components/schemas/ImportWizard"
+    CreateSubmissionRequest:
+      type: object
+      required: [problemId, languageId, sourceCode]
+      properties:
+        problemId:
+          type: string
+        contestId:
+          type: string
+        languageId:
+          $ref: "#/components/schemas/JudgeLanguageId"
+        sourceCode:
+          type: string
+    JudgeLanguageId:
+      type: string
+      enum: [c11, c17, cpp17, cpp20, cpp23, go, golang, java, java17, kotlin, nodejs20, php83, pypy3, python3, ruby33, rust]
+    Submission:
+      type: object
+      required: [submissionId, problemId, languageId, status]
+      properties:
+        submissionId:
+          type: string
+        problemId:
+          type: string
+        contestId:
+          type: string
+        languageId:
+          $ref: "#/components/schemas/JudgeLanguageId"
+        status:
+          type: string
+          enum: [queued, compiling, running, accepted, wrong_answer, time_limit_exceeded, memory_limit_exceeded, runtime_error, compile_error, system_error]
+        score:
+          type: integer
+    SubmissionEvent:
+      type: object
+      required: [submissionId, status, final]
+      properties:
+        submissionId:
+          type: string
+        status:
+          type: string
+          enum: [queued, compiling, running, accepted, wrong_answer, time_limit_exceeded, memory_limit_exceeded, runtime_error, compile_error, system_error]
+        testCaseIndex:
+          type: integer
+        message:
+          type: string
+        timeMs:
+          type: integer
+        memoryBytes:
+          type: integer
+        final:
+          type: boolean
+    SubmissionList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Submission"
+        nextCursor:
+          type: string
+    Scoreboard:
+      type: object
+      required: [contestId, rows]
+      properties:
+        contestId:
+          type: string
+        rows:
+          type: array
+          items:
+            type: object
+            properties:
+              rank:
+                type: integer
+              actorId:
+                type: string
+              displayName:
+                type: string
+              score:
+                type: integer
+              penalty:
+                type: integer
+        nextCursor:
+          type: string

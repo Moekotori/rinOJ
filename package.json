@@ -1,0 +1,27 @@
+{
+  "name": "rin-oj",
+  "version": "0.0.0",
+  "private": true,
+  "packageManager": "pnpm@10.10.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "test": "node tests/workspace-contract.test.mjs && node tests/docs-contract.test.mjs && node tests/interface-contract.test.mjs && node tests/web-contract.test.mjs && npm run test:go",
+    "test:web-contract": "node tests/web-contract.test.mjs",
+    "bench:go": "go test -bench=. -benchmem ./services/gateway/... ./services/judge-dispatcher/... ./services/problem-service/... ./services/submission-service/... ./services/user-service/...",
+    "proto:generate": "cd packages/proto && go run github.com/bufbuild/buf/cmd/buf@v1.57.2 generate",
+    "test:go": "go test ./packages/sdk-go/... ./services/gateway/... ./services/judge-dispatcher/... ./services/problem-service/... ./services/submission-service/... ./services/user-service/...",
+    "test:workspace": "node tests/workspace-contract.test.mjs",
+    "test:docs": "node tests/docs-contract.test.mjs",
+    "test:interfaces": "node tests/interface-contract.test.mjs",
+    "web:build": "npx --yes pnpm@10.10.0 --filter @rin-oj/web build",
+    "web:dev": "npx --yes pnpm@10.10.0 --filter @rin-oj/web dev",
+    "web:typecheck": "npx --yes pnpm@10.10.0 --filter @rin-oj/web typecheck"
+  },
+  "engines": {
+    "node": ">=22.0.0",
+    "pnpm": ">=10.0.0"
+  }
+}

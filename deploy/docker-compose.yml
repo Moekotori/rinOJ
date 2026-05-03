@@ -1,0 +1,112 @@
+name: rin-oj
+
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-rin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-rin_dev_password}
+      POSTGRES_DB: ${POSTGRES_DB:-rin_oj}
+    ports:
+      - "5432:5432"
+    command:
+      - "postgres"
+      - "-c"
+      - "shared_buffers=256MB"
+      - "-c"
+      - "max_connections=200"
+    volumes:
+      - rin_postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-rin} -d ${POSTGRES_DB:-rin_oj}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - rin_redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  meilisearch:
+    image: getmeili/meilisearch:v1.14
+    environment:
+      MEILI_ENV: development
+      MEILI_MASTER_KEY: ${MEILI_MASTER_KEY:-rin_dev_meili_master_key}
+    ports:
+      - "7700:7700"
+    volumes:
+      - rin_meili:/meili_data
+
+  minio:
+    image: minio/minio:RELEASE.2025-04-22T22-12-26Z
+    command: ["server", "/data", "--console-address", ":9001"]
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-rin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-rin_dev_minio_password}
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - rin_minio:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  go-judge:
+    profiles: ["judge"]
+    build:
+      context: ..
+      dockerfile: deploy/go-judge.Dockerfile
+    image: rin-oj/go-judge:dev
+    command:
+      - "-http-addr"
+      - "0.0.0.0:5050"
+      - "-parallelism"
+      - "${GO_JUDGE_PARALLELISM:-1}"
+      - "-pre-fork"
+      - "${GO_JUDGE_PRE_FORK:-0}"
+      - "-tmp-fs-param"
+      - "${GO_JUDGE_TMP_FS_PARAM:-size=64m,nr_inodes=4k}"
+      - "-output-limit"
+      - "67108864"
+      - "-copy-out-limit"
+      - "67108864"
+    privileged: true
+    shm_size: "256m"
+    ports:
+      - "${GO_JUDGE_HTTP_PORT:-5050}:5050"
+    security_opt:
+      - seccomp=unconfined
+
+  web:
+    profiles: ["web"]
+    build:
+      context: ..
+      dockerfile: deploy/web.Dockerfile
+    environment:
+      NEXT_PUBLIC_RIN_GATEWAY_URL: ${NEXT_PUBLIC_RIN_GATEWAY_URL:-http://127.0.0.1:8080}
+      NEXT_PUBLIC_RIN_MOCK_SUBMISSIONS: ${NEXT_PUBLIC_RIN_MOCK_SUBMISSIONS:-true}
+      PORT: 3000
+      HOSTNAME: 0.0.0.0
+    ports:
+      - "${WEB_PORT:-3000}:3000"
+    depends_on:
+      redis:
+        condition: service_healthy
+
+volumes:
+  rin_postgres:
+  rin_redis:
+  rin_meili:
+  rin_minio:

@@ -1,0 +1,102 @@
+syntax = "proto3";
+
+package rin.submission.v1;
+
+option go_package = "github.com/rin-oj/rin-oj/packages/sdk-go/rin/submission/v1;submissionv1";
+
+service SubmissionService {
+  rpc CreateSubmission(CreateSubmissionRequest) returns (Submission);
+  rpc GetSubmission(GetSubmissionRequest) returns (Submission);
+  rpc ListSubmissions(ListSubmissionsRequest) returns (ListSubmissionsResponse);
+  rpc StreamSubmission(StreamSubmissionRequest) returns (stream SubmissionEvent);
+  rpc ReportJudgeResult(ReportJudgeResultRequest) returns (ReportJudgeResultResponse);
+  rpc Rejudge(RejudgeRequest) returns (RejudgeResponse);
+}
+
+enum SubmissionStatus {
+  SUBMISSION_STATUS_UNSPECIFIED = 0;
+  SUBMISSION_STATUS_QUEUED = 1;
+  SUBMISSION_STATUS_COMPILING = 2;
+  SUBMISSION_STATUS_RUNNING = 3;
+  SUBMISSION_STATUS_ACCEPTED = 4;
+  SUBMISSION_STATUS_WRONG_ANSWER = 5;
+  SUBMISSION_STATUS_TIME_LIMIT_EXCEEDED = 6;
+  SUBMISSION_STATUS_MEMORY_LIMIT_EXCEEDED = 7;
+  SUBMISSION_STATUS_RUNTIME_ERROR = 8;
+  SUBMISSION_STATUS_COMPILE_ERROR = 9;
+  SUBMISSION_STATUS_SYSTEM_ERROR = 10;
+}
+
+message CreateSubmissionRequest {
+  string actor_id = 1;
+  string problem_id = 2;
+  string contest_id = 3;
+  string language_id = 4;
+  string source_code = 5;
+}
+
+message Submission {
+  string submission_id = 1;
+  string actor_id = 2;
+  string problem_id = 3;
+  string contest_id = 4;
+  string language_id = 5;
+  SubmissionStatus status = 6;
+  int64 score = 7;
+  int64 created_at_unix = 8;
+}
+
+message GetSubmissionRequest {
+  string submission_id = 1;
+}
+
+message ListSubmissionsRequest {
+  string cursor = 1;
+  int32 page_size = 2;
+  string actor_id = 3;
+  string problem_id = 4;
+  string contest_id = 5;
+}
+
+message ListSubmissionsResponse {
+  repeated Submission submissions = 1;
+  string next_cursor = 2;
+}
+
+message StreamSubmissionRequest {
+  string submission_id = 1;
+}
+
+message SubmissionEvent {
+  string submission_id = 1;
+  SubmissionStatus status = 2;
+  int32 test_case_index = 3;
+  string message = 4;
+  int64 time_ms = 5;
+  int64 memory_bytes = 6;
+  bool final = 7;
+}
+
+message ReportJudgeResultRequest {
+  string submission_id = 1;
+  SubmissionStatus status = 2;
+  int32 test_case_index = 3;
+  string message = 4;
+  int64 time_ms = 5;
+  int64 memory_bytes = 6;
+  bool final = 7;
+}
+
+message ReportJudgeResultResponse {
+  Submission submission = 1;
+}
+
+message RejudgeRequest {
+  string actor_id = 1;
+  repeated string submission_ids = 2;
+  string reason = 3;
+}
+
+message RejudgeResponse {
+  int64 enqueued_count = 1;
+}
