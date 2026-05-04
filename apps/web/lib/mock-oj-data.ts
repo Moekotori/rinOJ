@@ -1,306 +1,255 @@
+/** Local problem statements stay as practice seeds; activity/ranking/social datasets stay empty until API-backed data ships. */
+
 export const navItems = [
   { label: "Problems", labelKey: "nav.problems" as const, href: "/problems" },
+  { label: "Favorites", labelKey: "nav.favorites" as const, href: "/favorites" },
+  { label: "Problem Sets", labelKey: "nav.problemsets" as const, href: "/problemsets" },
   { label: "Contests", labelKey: "nav.contests" as const, href: "/contests" },
   { label: "Status", labelKey: "nav.status" as const, href: "/status" },
   { label: "Ranking", labelKey: "nav.ranking" as const, href: "/ranking" },
   { label: "Discuss", labelKey: "nav.discuss" as const, href: "/discuss" },
 ];
 
-export const problems = [
+export type MockProblem = {
+  id: string;
+  title: string;
+  titleZh: string;
+  difficulty: string;
+  tags: string[];
+  accepted: string;
+  submissions: string;
+  timeLimit: string;
+  memoryLimit: string;
+  statement: string;
+  statementZh: string;
+  input: string;
+  output: string;
+};
+
+export const problems: MockProblem[] = [
   {
     id: "P1001",
-    title: "A + B Problem",
-    titleZh: "A + B 问题",
-    difficulty: "Beginner",
-    tags: ["math", "io"],
-    accepted: "91.2%",
-    submissions: "184k",
-    timeLimit: "1s",
-    memoryLimit: "256 MiB",
-    statement: "Read two integers and print their sum.",
-    statementZh: "读入两个整数，输出它们的和。",
-    input: "1 2",
-    output: "3",
-  },
-  {
-    id: "P1024",
-    title: "Prefix Sakura Trail",
-    titleZh: "前缀和樱花小径",
+    title: "A + B Warmup",
+    titleZh: "A+B 热身",
     difficulty: "Easy",
-    tags: ["prefix", "array"],
-    accepted: "64.8%",
-    submissions: "12k",
+    tags: ["io", "math"],
+    accepted: "0%",
+    submissions: "0",
     timeLimit: "1s",
-    memoryLimit: "256 MiB",
-    statement: "Given an array, answer range sum queries with prefix sums.",
-    statementZh: "给定一个数组，使用前缀和回答区间求和查询。",
-    input: "5 2\n1 2 3 4 5\n1 3\n2 5",
-    output: "6\n14",
+    memoryLimit: "256MB",
+    statement: "Given two integers a and b, output their sum. This is the first checkpoint for making sure input and output are wired correctly.",
+    statementZh: "给定两个整数 a 和 b，输出它们的和。这是确认输入输出流程正常的第一道热身题。",
+    input: "3 4\n",
+    output: "7\n",
   },
   {
-    id: "P2048",
-    title: "Rin and Dynamic Scoreboard",
-    titleZh: "Rin 与动态排行榜",
+    id: "P1002",
+    title: "Rin's Score Gate",
+    titleZh: "Rin 的成绩门槛",
+    difficulty: "Easy",
+    tags: ["condition"],
+    accepted: "0%",
+    submissions: "0",
+    timeLimit: "1s",
+    memoryLimit: "256MB",
+    statement: "Read one integer score. Print PASS if it is at least 60, otherwise print FAIL.",
+    statementZh: "读入一个整数成绩。如果成绩不小于 60，输出 PASS；否则输出 FAIL。",
+    input: "72\n",
+    output: "PASS\n",
+  },
+  {
+    id: "P1003",
+    title: "Cherry Blossom Counter",
+    titleZh: "樱花计数器",
+    difficulty: "Easy",
+    tags: ["loop", "math"],
+    accepted: "0%",
+    submissions: "0",
+    timeLimit: "1s",
+    memoryLimit: "256MB",
+    statement: "Given n, compute 1 + 2 + ... + n. n can be large enough that a loop or formula is needed instead of manual addition.",
+    statementZh: "给定 n，计算 1 + 2 + ... + n。n 可能较大，请使用循环或公式完成计算。",
+    input: "10\n",
+    output: "55\n",
+  },
+  {
+    id: "P1004",
+    title: "Highest Training Score",
+    titleZh: "最高训练分",
+    difficulty: "Easy",
+    tags: ["array"],
+    accepted: "0%",
+    submissions: "0",
+    timeLimit: "1s",
+    memoryLimit: "256MB",
+    statement: "Given n scores, output the maximum score. The scores are integers and may appear in any order.",
+    statementZh: "给定 n 个训练分数，输出其中的最大值。分数均为整数，顺序不固定。",
+    input: "5\n17 42 9 88 63\n",
+    output: "88\n",
+  },
+  {
+    id: "P1005",
+    title: "Palindrome Badge",
+    titleZh: "回文徽章",
     difficulty: "Medium",
-    tags: ["heap", "greedy"],
-    accepted: "38.5%",
-    submissions: "7.8k",
-    timeLimit: "2s",
-    memoryLimit: "512 MiB",
-    statement: "Maintain a live scoreboard while teams submit solutions.",
-    statementZh: "在队伍不断提交代码时，维护实时排行榜。",
-    input: "3 4\nA 100\nB 80\nA 30\nC 60",
-    output: "A\nA\nA\nA",
+    tags: ["string"],
+    accepted: "0%",
+    submissions: "0",
+    timeLimit: "1s",
+    memoryLimit: "256MB",
+    statement: "Given a lowercase string, determine whether it reads the same forward and backward. Print YES or NO.",
+    statementZh: "给定一个小写字符串，判断它正着读和反着读是否完全相同。输出 YES 或 NO。",
+    input: "level\n",
+    output: "YES\n",
   },
   {
-    id: "P4096",
-    title: "Moonlit Network Flow",
-    titleZh: "月夜网络流",
+    id: "P1006",
+    title: "Snack Prefix Sum",
+    titleZh: "零食前缀和",
+    difficulty: "Medium",
+    tags: ["prefix", "array"],
+    accepted: "0%",
+    submissions: "0",
+    timeLimit: "1s",
+    memoryLimit: "256MB",
+    statement: "There are n snack prices and q range queries. For each query l r, output the sum of prices from l to r, using 1-based indices.",
+    statementZh: "有 n 个零食价格和 q 次区间询问。每次给出 l r，输出第 l 到第 r 个价格之和，下标从 1 开始。",
+    input: "5 3\n2 4 6 8 10\n1 3\n2 5\n4 4\n",
+    output: "12\n28\n8\n",
+  },
+  {
+    id: "P1007",
+    title: "Festival Queue",
+    titleZh: "祭典排队",
+    difficulty: "Medium",
+    tags: ["greedy"],
+    accepted: "0%",
+    submissions: "0",
+    timeLimit: "1s",
+    memoryLimit: "256MB",
+    statement: "Given n task durations and a time limit T, choose as many tasks as possible without exceeding T. You may reorder tasks.",
+    statementZh: "给定 n 个任务耗时和总时间 T，请选择尽可能多的任务，要求总耗时不超过 T。任务可以重新排序。",
+    input: "5 10\n6 2 3 8 1\n",
+    output: "3\n",
+  },
+  {
+    id: "P1008",
+    title: "Tiny Graph Walk",
+    titleZh: "小图漫步",
     difficulty: "Hard",
-    tags: ["flow", "graph"],
-    accepted: "18.4%",
-    submissions: "2.1k",
-    timeLimit: "3s",
-    memoryLimit: "1024 MiB",
-    statement: "Compute the maximum flow in a directed graph.",
-    statementZh: "计算有向图中的最大流。",
-    input: "4 5\n1 2 3\n1 3 2\n2 3 1\n2 4 2\n3 4 4",
-    output: "5",
-  },
-  {
-    id: "P8192",
-    title: "Interactive Tea Party",
-    titleZh: "交互茶会",
-    difficulty: "Expert",
-    tags: ["interactive"],
-    accepted: "9.7%",
-    submissions: "806",
+    tags: ["graph"],
+    accepted: "0%",
+    submissions: "0",
     timeLimit: "2s",
-    memoryLimit: "256 MiB",
-    statement: "Find the hidden number through an interactive protocol.",
-    statementZh: "通过交互协议找到隐藏数字。",
-    input: "interactive",
-    output: "interactive",
+    memoryLimit: "256MB",
+    statement: "Given an undirected unweighted graph and two vertices s and t, output the length of the shortest path from s to t, or -1 if unreachable.",
+    statementZh: "给定一张无向无权图以及两个点 s、t，输出从 s 到 t 的最短路长度；若不可达，输出 -1。",
+    input: "5 4 1 5\n1 2\n2 3\n3 4\n4 5\n",
+    output: "4\n",
+  },
+  {
+    id: "P1009",
+    title: "Top K Crystals",
+    titleZh: "前 K 颗水晶",
+    difficulty: "Hard",
+    tags: ["heap", "array"],
+    accepted: "0%",
+    submissions: "0",
+    timeLimit: "2s",
+    memoryLimit: "256MB",
+    statement: "Given n crystal values, output the k largest values in descending order. If values are equal, keep all of them.",
+    statementZh: "给定 n 颗水晶的价值，按从大到小输出其中最大的 k 个值。相同价值也需要保留。",
+    input: "6 3\n5 1 9 9 2 7\n",
+    output: "9 9 7\n",
+  },
+  {
+    id: "P1010",
+    title: "Rectangle Meeting Point",
+    titleZh: "矩形相交点",
+    difficulty: "Expert",
+    tags: ["geometry", "condition"],
+    accepted: "0%",
+    submissions: "0",
+    timeLimit: "1s",
+    memoryLimit: "256MB",
+    statement: "Given two axis-aligned rectangles, determine whether their areas overlap. Touching at an edge or a point is not considered overlap.",
+    statementZh: "给定两个边与坐标轴平行的矩形，判断它们的面积是否有重叠。仅边界或顶点相接不算重叠。",
+    input: "0 0 3 3\n2 2 5 5\n",
+    output: "YES\n",
   },
 ];
 
-export const contests = [
-  {
-    id: "C1001",
-    title: "Rin Weekly Round 12",
-    titleZh: "Rin 周赛 12",
-    mode: "ICPC",
-    time: "Today 20:00",
-    timeZh: "今天 20:00",
-    registered: 428,
-    status: "Registering",
-  },
-  {
-    id: "C1002",
-    title: "Spring Training Mirror",
-    titleZh: "春季训练镜像赛",
-    mode: "OI",
-    time: "May 04 14:00",
-    timeZh: "5 月 4 日 14:00",
-    registered: 96,
-    status: "Scheduled",
-  },
-  {
-    id: "C1003",
-    title: "AtCoder-style Practice",
-    titleZh: "AtCoder 风格练习赛",
-    mode: "AtCoder",
-    time: "May 06 19:30",
-    timeZh: "5 月 6 日 19:30",
-    registered: 215,
-    status: "Scheduled",
-  },
-];
+export type MockContest = {
+  id: string;
+  title: string;
+  titleZh: string;
+  mode: string;
+  time: string;
+  timeZh: string;
+  registered: number;
+  status: string;
+};
 
-export const contestProblems = [
-  { contestId: "C1001", problemId: "P1001", alias: "A", points: 100 },
-  { contestId: "C1001", problemId: "P1024", alias: "B", points: 100 },
-  { contestId: "C1001", problemId: "P2048", alias: "C", points: 100 },
-  { contestId: "C1002", problemId: "P1024", alias: "A", points: 100 },
-  { contestId: "C1002", problemId: "P4096", alias: "B", points: 100 },
-  { contestId: "C1003", problemId: "P1001", alias: "A", points: 500 },
-  { contestId: "C1003", problemId: "P8192", alias: "B", points: 600 },
-];
+export const contests: MockContest[] = [];
 
-export const contestStandings = [
-  { contestId: "C1001", rank: 1, user: "nanami", solved: 3, penalty: 218, score: 300 },
-  { contestId: "C1001", rank: 2, user: "mika", solved: 2, penalty: 174, score: 200 },
-  { contestId: "C1001", rank: 3, user: "sora", solved: 1, penalty: 96, score: 100 },
-  { contestId: "C1002", rank: 1, user: "haru", solved: 2, penalty: 141, score: 200 },
-  { contestId: "C1002", rank: 2, user: "akira", solved: 1, penalty: 87, score: 100 },
-  { contestId: "C1003", rank: 1, user: "rin_admin", solved: 2, penalty: 0, score: 1100 },
-  { contestId: "C1003", rank: 2, user: "yuki", solved: 1, penalty: 0, score: 500 },
-];
+export type MockContestProblem = { contestId: string; problemId: string; alias: string; points: number };
 
-export const judgements = [
-  { when: "12s ago", whenZh: "12 秒前", user: "mika", problem: "P1024", lang: "C++20", verdict: "Accepted", time: "31 ms", memory: "6.4 MiB" },
-  { when: "28s ago", whenZh: "28 秒前", user: "yuki", problem: "P2048", lang: "Rust", verdict: "Wrong Answer", time: "44 ms", memory: "9.1 MiB" },
-  { when: "43s ago", whenZh: "43 秒前", user: "akira", problem: "P1001", lang: "Go", verdict: "Accepted", time: "5 ms", memory: "2.2 MiB" },
-  { when: "1m ago", whenZh: "1 分钟前", user: "sora", problem: "P4096", lang: "Python 3", verdict: "TLE", time: "1000 ms", memory: "42.0 MiB" },
-  { when: "2m ago", whenZh: "2 分钟前", user: "haru", problem: "P1001", lang: "Java 17", verdict: "Accepted", time: "63 ms", memory: "32.0 MiB" },
-  { when: "3m ago", whenZh: "3 分钟前", user: "nanami", problem: "P4096", lang: "C11", verdict: "Accepted", time: "22 ms", memory: "3.8 MiB" },
-  { when: "4m ago", whenZh: "4 分钟前", user: "rin_admin", problem: "P1024", lang: "JavaScript", verdict: "Runtime Error", time: "18 ms", memory: "18.0 MiB" },
-  { when: "5m ago", whenZh: "5 分钟前", user: "mika", problem: "P1001", lang: "PHP", verdict: "Accepted", time: "36 ms", memory: "12.4 MiB" },
-];
+export const contestProblems: MockContestProblem[] = [];
 
-export const ratingRows = [
-  { rank: 1, name: "nanami", rating: 2416, solved: 318, motto: "flow enjoyer" },
-  { rank: 2, name: "rin_admin", rating: 2388, solved: 302, motto: "keeps the judge warm" },
-  { rank: 3, name: "haru", rating: 2294, solved: 277, motto: "dp before coffee" },
-  { rank: 4, name: "mika", rating: 2160, solved: 241, motto: "one more submission" },
-  { rank: 5, name: "sora", rating: 2058, solved: 226, motto: "graphs are poems" },
-];
+export type MockContestStanding = { contestId: string; rank: number; user: string; solved: number; penalty: number; score: number };
 
-export const discussPosts = [
-  {
-    id: "D1001",
-    type: "editorial",
-    title: "A + B 的输入输出坑点整理",
-    titleEn: "A + B input/output notes",
-    author: "rin_admin",
-    problemId: "P1001",
-    createdAt: "8m ago",
-    createdAtZh: "8 分钟前",
-    replies: 12,
-    likes: 48,
-    excerpt: "题解里演示 fast I/O、换行和最小 C++17 写法。复杂度 $O(1)$。",
-    excerptEn: "Editorial with fast I/O, newline handling, and a minimal C++17 solution. Complexity $O(1)$.",
-    body: "## 思路\n读入两个整数 $a,b$，输出 $a+b$。\n\n```cpp\nint a, b;\ncin >> a >> b;\ncout << a + b << '\\n';\n```\n\n关联题目：P1001",
-  },
-  {
-    id: "D1024",
-    type: "editorial",
-    title: "前缀和为什么能把区间查询降到 O(1)",
-    titleEn: "Why prefix sums answer range queries in O(1)",
-    author: "mika",
-    problemId: "P1024",
-    createdAt: "21m ago",
-    createdAtZh: "21 分钟前",
-    replies: 6,
-    likes: 31,
-    excerpt: "如果 $s_i=a_1+...+a_i$，那么区间和就是 $s_r-s_{l-1}$。",
-    excerptEn: "If $s_i=a_1+...+a_i$, then range sum is $s_r-s_{l-1}$.",
-    body: "## 公式\n$$sum(l,r)=prefix[r]-prefix[l-1]$$\n\n可以去看 P1024 的样例。",
-  },
-  {
-    id: "D2048",
-    type: "question",
-    title: "动态排行榜这题用堆还是排序更稳？",
-    titleEn: "Heap or sorting for the dynamic scoreboard problem?",
-    author: "yuki",
-    problemId: "P2048",
-    createdAt: "34m ago",
-    createdAtZh: "34 分钟前",
-    replies: 9,
-    likes: 18,
-    excerpt: "我在 P2048 里每次排序会 TLE，想确认是不是应该维护堆或有序集合。",
-    excerptEn: "Sorting every update in P2048 seems too slow. Should I maintain a heap or ordered set?",
-    body: "每次提交后都 sort 一遍复杂度太高。\n\n想问：能不能维护一个 `priority_queue`？",
-  },
-];
+export const contestStandings: MockContestStanding[] = [];
 
-export const userProfiles = [
-  {
-    username: "nanami",
-    displayName: "Nanami",
-    title: "Sakura Grandmaster",
-    titleZh: "樱花宗师",
-    rating: 2416,
-    solved: 318,
-    followers: 1280,
-    streak: 42,
-    signature: "flow enjoyer",
-    signatureZh: "网络流爱好者",
-    badges: ["ICPC", "Flow", "Teacher"],
-    heatmap: [0, 1, 2, 3, 4, 2, 1, 0, 3, 4, 2, 1, 4, 3, 0, 2, 2, 4, 1, 3, 0, 1, 4, 2, 3, 2, 0, 1],
-  },
-  {
-    username: "rin_admin",
-    displayName: "Rin Admin",
-    title: "Judge Keeper",
-    titleZh: "评测守护者",
-    rating: 2388,
-    solved: 302,
-    followers: 910,
-    streak: 36,
-    signature: "keeps the judge warm",
-    signatureZh: "让评测机保持温暖",
-    badges: ["Admin", "go-judge", "Ops"],
-    heatmap: [2, 2, 3, 4, 4, 1, 0, 3, 3, 2, 4, 1, 2, 0, 3, 4, 4, 2, 1, 2, 3, 4, 0, 2, 1, 4, 3, 2],
-  },
-  {
-    username: "mika",
-    displayName: "Mika",
-    title: "Prefix Runner",
-    titleZh: "前缀和旅人",
-    rating: 2160,
-    solved: 241,
-    followers: 512,
-    streak: 18,
-    signature: "one more submission",
-    signatureZh: "再交一次就过",
-    badges: ["Array", "Greedy", "Weekly"],
-    heatmap: [0, 0, 1, 2, 3, 0, 1, 2, 4, 1, 0, 3, 2, 1, 4, 0, 2, 3, 1, 1, 4, 2, 0, 3, 1, 2, 4, 0],
-  },
-  {
-    username: "haru",
-    displayName: "Haru",
-    title: "DP Crafter",
-    titleZh: "动态规划匠人",
-    rating: 2294,
-    solved: 277,
-    followers: 720,
-    streak: 31,
-    signature: "dp before coffee",
-    signatureZh: "咖啡之前先 DP",
-    badges: ["DP", "OI", "Editorial"],
-    heatmap: [2, 3, 4, 1, 2, 0, 3, 4, 1, 2, 3, 0, 4, 2, 1, 3, 4, 0, 2, 1, 3, 4, 2, 0, 1, 3, 2, 4],
-  },
-  {
-    username: "sora",
-    displayName: "Sora",
-    title: "Graph Poet",
-    titleZh: "图论诗人",
-    rating: 2058,
-    solved: 226,
-    followers: 404,
-    streak: 15,
-    signature: "graphs are poems",
-    signatureZh: "图也是诗",
-    badges: ["Graph", "DFS", "Contest"],
-    heatmap: [1, 2, 0, 1, 3, 4, 2, 0, 1, 2, 3, 1, 0, 4, 2, 2, 1, 3, 0, 2, 4, 1, 3, 0, 2, 1, 3, 4],
-  },
-  {
-    username: "yuki",
-    displayName: "Yuki",
-    title: "Rust Learner",
-    titleZh: "Rust 修行者",
-    rating: 1964,
-    solved: 198,
-    followers: 260,
-    streak: 9,
-    signature: "borrow checker arc",
-    signatureZh: "正在和借用检查器修行",
-    badges: ["Rust", "DP", "Practice"],
-    heatmap: [0, 1, 1, 2, 0, 3, 2, 1, 0, 2, 4, 1, 2, 3, 0, 1, 2, 0, 3, 4, 1, 2, 1, 0, 3, 2, 1, 4],
-  },
-  {
-    username: "akira",
-    displayName: "Akira",
-    title: "Go Sprinter",
-    titleZh: "Go 语言冲刺者",
-    rating: 1880,
-    solved: 176,
-    followers: 190,
-    streak: 7,
-    signature: "tiny code, fast AC",
-    signatureZh: "短代码，快 AC",
-    badges: ["Go", "Beginner", "Sprint"],
-    heatmap: [1, 0, 2, 1, 0, 2, 3, 1, 4, 0, 1, 2, 2, 0, 3, 1, 2, 4, 0, 1, 3, 2, 0, 1, 4, 2, 1, 0],
-  },
-];
+export type JudgementSeed = {
+  when: string;
+  whenZh: string;
+  user: string;
+  problem: string;
+  lang: string;
+  verdict: string;
+  time: string;
+  memory: string;
+};
+
+export const judgements: JudgementSeed[] = [];
+
+export type MockRatingRow = { rank: number; name: string; rating: number; solved: number; motto: string };
+
+export const ratingRows: MockRatingRow[] = [];
+
+export type MockDiscussPost = {
+  id: string;
+  type: string;
+  title: string;
+  titleEn: string;
+  author: string;
+  problemId: string;
+  createdAt: string;
+  createdAtZh: string;
+  replies: number;
+  likes: number;
+  excerpt: string;
+  excerptEn: string;
+  body: string;
+};
+
+export const discussPosts: MockDiscussPost[] = [];
+
+export type MockUserProfile = {
+  username: string;
+  displayName: string;
+  title: string;
+  titleZh: string;
+  rating: number;
+  solved: number;
+  followers: number;
+  streak: number;
+  signature: string;
+  signatureZh: string;
+  badges: string[];
+  heatmap: number[];
+  /** Optional demo flag for seeded profiles (session-based admin uses accountRole). */
+  showAdminTag?: boolean;
+};
+
+export const userProfiles: MockUserProfile[] = [];

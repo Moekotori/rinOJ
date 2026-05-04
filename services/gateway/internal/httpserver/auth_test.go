@@ -18,6 +18,7 @@ type fakeUserClient struct{}
 func (fakeUserClient) Register(context.Context, *userv1.RegisterRequest) (*userv1.AuthSession, error) {
 	return &userv1.AuthSession{
 		UserId:               "usr_test",
+		Role:                 "student",
 		AccessToken:          "access_test",
 		RefreshToken:         "refresh_test",
 		AccessExpiresAtUnix:  100,
@@ -28,10 +29,21 @@ func (fakeUserClient) Register(context.Context, *userv1.RegisterRequest) (*userv
 func (fakeUserClient) Login(context.Context, *userv1.LoginRequest) (*userv1.AuthSession, error) {
 	return &userv1.AuthSession{
 		UserId:               "usr_login",
+		Role:                 "student",
 		AccessToken:          "access_login",
 		RefreshToken:         "refresh_login",
 		AccessExpiresAtUnix:  300,
 		RefreshExpiresAtUnix: 400,
+	}, nil
+}
+
+func (fakeUserClient) GetProfile(context.Context, *userv1.GetProfileRequest) (*userv1.UserProfile, error) {
+	return &userv1.UserProfile{
+		UserId:      "usr_login",
+		Username:    "rin_user",
+		DisplayName: "rin_user",
+		Locale:      "zh-CN",
+		Role:        "admin",
 	}, nil
 }
 
@@ -103,5 +115,27 @@ func TestLoginRoute(t *testing.T) {
 	}
 	if payload["userId"] != "usr_login" {
 		t.Fatalf("userId = %v", payload["userId"])
+	}
+}
+
+func TestGetUserProfileRoute(t *testing.T) {
+	server := New(ServerConfig{UserClient: fakeUserClient{}})
+	req := httptest.NewRequest(http.MethodGet, "/v1/users/usr_login", nil)
+	res := httptest.NewRecorder()
+
+	server.ServeHTTP(res, req)
+
+	if res.Code != http.StatusOK {
+		t.Fatalf("status = %d body = %s", res.Code, res.Body.String())
+	}
+	var payload map[string]any
+	if err := json.Unmarshal(res.Body.Bytes(), &payload); err != nil {
+		t.Fatalf("decode response: %v", err)
+	}
+	if payload["role"] != "admin" {
+		t.Fatalf("role = %v", payload["role"])
+	}
+	if payload["username"] != "rin_user" {
+		t.Fatalf("username = %v", payload["username"])
 	}
 }

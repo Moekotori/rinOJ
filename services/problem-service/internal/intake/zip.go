@@ -13,6 +13,13 @@ import (
 
 const maxImportPreviewFileBytes uint64 = 4 * 1024 * 1024
 
+type zipFormat int
+
+const (
+	zipFormatStructured zipFormat = iota
+	zipFormatFlat
+)
+
 func ParseProblemPackageZIP(sourceFilename string, reader io.ReaderAt, size int64) (ProblemPackage, error) {
 	if size <= 0 {
 		return ProblemPackage{}, errors.New("zip package is empty")
@@ -21,6 +28,9 @@ func ParseProblemPackageZIP(sourceFilename string, reader io.ReaderAt, size int6
 	archive, err := zip.NewReader(reader, size)
 	if err != nil {
 		return ProblemPackage{}, err
+	}
+	if detectZIPFormat(archive) == zipFormatFlat {
+		return parseFlatProblemPackageArchive(sourceFilename, archive, FlatZIPMetadata{})
 	}
 
 	pkg := ProblemPackage{
@@ -83,6 +93,98 @@ func ParseProblemPackageZIP(sourceFilename string, reader io.ReaderAt, size int6
 	pkg.Samples = sampleCases(samples)
 	sort.Strings(pkg.TestFiles)
 	return pkg, nil
+}
+
+// ParseFlatProblemPackageZIP parses the simplified flat ZIP format where
+// metadata comes from the caller instead of problem.json.
+func ParseFlatProblemPackageZIP(sourceFilename string, reader io.ReaderAt, size int64, metadata FlatZIPMetadata) (ProblemPackage, error) {
+	if size <= 0 {
+		return ProblemPackage{}, errors.New("zip package is empty")
+	}
+
+	archive, err := zip.NewReader(reader, size)
+	if err != nil {
+		return ProblemPackage{}, err
+	}
+	if detectZIPFormat(archive) == zipFormatStructured {
+		return ParseProblemPackageZIP(sourceFilename, reader, size)
+	}
+	return parseFlatProblemPackageArchive(sourceFilename, archive, metadata)
+}
+
+func detectZIPFormat(archive *zip.Reader) zipFormat {
+	for _, file := range archive.File {
+		if path.Base(strings.ReplaceAll(file.Name, "\\", "/")) == "problem.json" {
+			return zipFormatStructured
+		}
+	}
+	return zipFormatFlat
+}
+
+func parseFlatProblemPackageArchive(sourceFilename string, archive *zip.Reader, metadata FlatZIPMetadata) (ProblemPackage, error) {
+	pkg := ProblemPackage{
+		SourceFilename: sourceFilename,
+		ProblemJSON: ProblemManifest{
+			Title:       strings.TrimSpace(metadata.Title),
+			TimeLimit:   defaultPositive(metadata.TimeLimit, 1000),
+			MemoryLimit: defaultPositive(metadata.MemoryLimit, 256),
+			Type:        normalizeProblemType(metadata.JudgeType),
+			JudgeType:   normalizeProblemType(metadata.JudgeType),
+		},
+		Statements: make(map[string]string),
+	}
+
+	inputs := make(map[string]string)
+	outputs := make(map[string]string)
+	for _, file := range archive.File {
+		name, err := safeZipPath(file.Name)
+		if err != nil {
+			return ProblemPackage{}, err
+		}
+		if file.FileInfo().IsDir() || strings.Contains(name, "/") {
+			continue
+		}
+
+		switch {
+		case name == "statement.md":
+			content, err := readZipText(file)
+			if err != nil {
+				return ProblemPackage{}, err
+			}
+			pkg.Statements["zh-CN"] = content
+		default:
+			stem, kind := splitDataFile(name)
+			if kind == "input" {
+				inputs[stem] = name
+			}
+			if kind == "output" {
+				outputs[stem] = name
+			}
+		}
+	}
+
+	if strings.TrimSpace(pkg.Statements["zh-CN"]) == "" {
+		return ProblemPackage{}, errors.New("flat zip requires statement.md at the archive root")
+	}
+
+	names := make([]string, 0, len(inputs))
+	for name := range inputs {
+		if outputs[name] != "" {
+			names = append(names, name)
+		}
+	}
+	sort.Strings(names)
+	for _, name := range names {
+		pkg.TestFiles = append(pkg.TestFiles, inputs[name], outputs[name])
+	}
+	return pkg, nil
+}
+
+func defaultPositive(value int, fallback int) int {
+	if value < 1 {
+		return fallback
+	}
+	return value
 }
 
 type sampleParts struct {

@@ -200,6 +200,7 @@ type AuthSession struct {
 	RefreshToken         string                 `protobuf:"bytes,3,opt,name=refresh_token,json=refreshToken,proto3" json:"refresh_token,omitempty"`
 	AccessExpiresAtUnix  int64                  `protobuf:"varint,4,opt,name=access_expires_at_unix,json=accessExpiresAtUnix,proto3" json:"access_expires_at_unix,omitempty"`
 	RefreshExpiresAtUnix int64                  `protobuf:"varint,5,opt,name=refresh_expires_at_unix,json=refreshExpiresAtUnix,proto3" json:"refresh_expires_at_unix,omitempty"`
+	Role                 string                 `protobuf:"bytes,6,opt,name=role,proto3" json:"role,omitempty"`
 	unknownFields        protoimpl.UnknownFields
 	sizeCache            protoimpl.SizeCache
 }
@@ -269,6 +270,13 @@ func (x *AuthSession) GetRefreshExpiresAtUnix() int64 {
 	return 0
 }
 
+func (x *AuthSession) GetRole() string {
+	if x != nil {
+		return x.Role
+	}
+	return ""
+}
+
 type GetProfileRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
@@ -324,6 +332,7 @@ type UserProfile struct {
 	Locale        string                 `protobuf:"bytes,7,opt,name=locale,proto3" json:"locale,omitempty"`
 	AcceptedCount int64                  `protobuf:"varint,8,opt,name=accepted_count,json=acceptedCount,proto3" json:"accepted_count,omitempty"`
 	Rating        int64                  `protobuf:"varint,9,opt,name=rating,proto3" json:"rating,omitempty"`
+	Role          string                 `protobuf:"bytes,10,opt,name=role,proto3" json:"role,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -419,6 +428,13 @@ func (x *UserProfile) GetRating() int64 {
 		return x.Rating
 	}
 	return 0
+}
+
+func (x *UserProfile) GetRole() string {
+	if x != nil {
+		return x.Role
+	}
+	return ""
 }
 
 type CheckPermissionRequest struct {
@@ -556,15 +572,16 @@ const file_rin_user_v1_user_proto_rawDesc = "" +
 	"\bpassword\x18\x02 \x01(\tR\bpassword\x12\x1b\n" +
 	"\ttotp_code\x18\x03 \x01(\tR\btotpCode\"5\n" +
 	"\x0eRefreshRequest\x12#\n" +
-	"\rrefresh_token\x18\x01 \x01(\tR\frefreshToken\"\xda\x01\n" +
+	"\rrefresh_token\x18\x01 \x01(\tR\frefreshToken\"\xee\x01\n" +
 	"\vAuthSession\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x12!\n" +
 	"\faccess_token\x18\x02 \x01(\tR\vaccessToken\x12#\n" +
 	"\rrefresh_token\x18\x03 \x01(\tR\frefreshToken\x123\n" +
 	"\x16access_expires_at_unix\x18\x04 \x01(\x03R\x13accessExpiresAtUnix\x125\n" +
-	"\x17refresh_expires_at_unix\x18\x05 \x01(\x03R\x14refreshExpiresAtUnix\",\n" +
+	"\x17refresh_expires_at_unix\x18\x05 \x01(\x03R\x14refreshExpiresAtUnix\x12\x12\n" +
+	"\x04role\x18\x06 \x01(\tR\x04role\",\n" +
 	"\x11GetProfileRequest\x12\x17\n" +
-	"\auser_id\x18\x01 \x01(\tR\x06userId\"\x8c\x02\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\"\xa0\x02\n" +
 	"\vUserProfile\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x1a\n" +
 	"\busername\x18\x02 \x01(\tR\busername\x12!\n" +
@@ -576,7 +593,9 @@ const file_rin_user_v1_user_proto_rawDesc = "" +
 	"\x03bio\x18\x06 \x01(\tR\x03bio\x12\x16\n" +
 	"\x06locale\x18\a \x01(\tR\x06locale\x12%\n" +
 	"\x0eaccepted_count\x18\b \x01(\x03R\racceptedCount\x12\x16\n" +
-	"\x06rating\x18\t \x01(\x03R\x06rating\"\xfb\x01\n" +
+	"\x06rating\x18\t \x01(\x03R\x06rating\x12\x12\n" +
+	"\x04role\x18\n" +
+	" \x01(\tR\x04role\"\xfb\x01\n" +
 	"\x16CheckPermissionRequest\x12\x19\n" +
 	"\bactor_id\x18\x01 \x01(\tR\aactorId\x12\x16\n" +
 	"\x06action\x18\x02 \x01(\tR\x06action\x12\x1a\n" +

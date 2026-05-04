@@ -72,6 +72,56 @@ func TestValidateProblemImport(t *testing.T) {
 	}
 }
 
+func TestValidateProblemImportForwardsFlatMetadata(t *testing.T) {
+	server := New(intake.NewService(intake.WithIDGenerator(intake.StaticIDGenerator{Value: "fixed"})))
+
+	wizard, err := server.ValidateProblemImport(context.Background(), &problemv1.ValidateProblemImportRequest{
+		ActorId:         "usr_teacher",
+		UploadObjectKey: "problem-intake/usr_teacher/flat.zip",
+		SourceFilename:  "flat.zip",
+		FlatMetadata: &problemv1.FlatZIPMetadata{
+			Title:       "A + B",
+			TimeLimit:   2000,
+			MemoryLimit: 512,
+			JudgeType:   "special_judge",
+		},
+	})
+	if err != nil {
+		t.Fatalf("ValidateProblemImport returned error: %v", err)
+	}
+	if wizard.GetDetectedTitle() != "A + B" {
+		t.Fatalf("unexpected title %q", wizard.GetDetectedTitle())
+	}
+	if wizard.GetDetectedType() != problemv1.ProblemType_PROBLEM_TYPE_SPECIAL_JUDGE {
+		t.Fatalf("unexpected type %s", wizard.GetDetectedType())
+	}
+}
+
+func TestCreateInlineDraft(t *testing.T) {
+	server := New(intake.NewService(intake.WithIDGenerator(intake.StaticIDGenerator{Value: "fixed"})))
+
+	draft, err := server.CreateInlineDraft(context.Background(), &problemv1.CreateInlineDraftRequest{
+		ActorId:     "usr_student",
+		Title:       "A + B",
+		Statement:   "# A + B\n",
+		JudgeType:   "traditional",
+		TimeLimit:   1000,
+		MemoryLimit: 256,
+		Samples: []*problemv1.InlineSample{
+			{Input: "1 2\n", Output: "3\n"},
+		},
+		TestCases: []*problemv1.InlineTestCase{
+			{InputText: "1 2\n", OutputText: "3\n"},
+		},
+	})
+	if err != nil {
+		t.Fatalf("CreateInlineDraft returned error: %v", err)
+	}
+	if draft.GetDraftId() != "draft_fixed" || draft.GetVisibility() != "private" {
+		t.Fatalf("unexpected inline draft %#v", draft)
+	}
+}
+
 type fakeSigner struct{}
 
 func (s *fakeSigner) PresignUploadPart(ctx context.Context, objectKey string, partNumber int32, expires time.Duration) (intake.PresignedUploadPart, error) {

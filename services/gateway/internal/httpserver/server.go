@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/coder/websocket"
 	"github.com/coder/websocket/wsjson"
@@ -24,11 +25,19 @@ type ServerConfig struct {
 	ProblemClient    ProblemClient
 	SubmissionClient SubmissionClient
 	UserClient       UserClient
+	AdminClient      AdminClient
+}
+
+// AdminClient calls the user-service's internal admin HTTP server.
+// It is a separate interface so it can be nil-guarded and tested independently.
+type AdminClient interface {
+	UpdateUserRole(ctx context.Context, actorID, targetUserID, role string) (string, error)
 }
 
 type ProblemClient interface {
 	CreatePresignedUpload(ctx context.Context, req *problemv1.CreatePresignedUploadRequest) (*problemv1.CreatePresignedUploadResponse, error)
 	ValidateProblemImport(ctx context.Context, req *problemv1.ValidateProblemImportRequest) (*problemv1.ImportWizard, error)
+	CreateInlineDraft(ctx context.Context, req *problemv1.CreateInlineDraftRequest) (*problemv1.CreateInlineDraftResponse, error)
 	TeacherQuickUpload(ctx context.Context, req *problemv1.TeacherQuickUploadRequest) (*problemv1.ProblemDraft, error)
 	StudentDraftSubmission(ctx context.Context, req *problemv1.StudentDraftSubmissionRequest) (*problemv1.ProblemDraft, error)
 }
@@ -47,6 +56,7 @@ type SubmissionEventStream interface {
 type UserClient interface {
 	Register(ctx context.Context, req *userv1.RegisterRequest) (*userv1.AuthSession, error)
 	Login(ctx context.Context, req *userv1.LoginRequest) (*userv1.AuthSession, error)
+	GetProfile(ctx context.Context, req *userv1.GetProfileRequest) (*userv1.UserProfile, error)
 }
 
 // New builds the HTTP edge as a standard net/http handler. Keeping this return
@@ -65,7 +75,7 @@ func New(config ServerConfig) http.Handler {
 	e.HidePort = true
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
 		AllowOrigins: []string{"http://127.0.0.1:3000", "http://localhost:3000"},
-		AllowMethods: []string{http.MethodGet, http.MethodPost, http.MethodOptions},
+		AllowMethods: []string{http.MethodGet, http.MethodPost, http.MethodPatch, http.MethodOptions},
 		AllowHeaders: []string{echo.HeaderContentType, "X-Rin-Actor-ID"},
 	}))
 
@@ -87,6 +97,9 @@ func New(config ServerConfig) http.Handler {
 	}
 	if config.UserClient != nil {
 		registerAuthRoutes(e, config.UserClient)
+	}
+	if config.AdminClient != nil {
+		registerAdminRoutes(e, config.AdminClient)
 	}
 
 	return e
@@ -125,6 +138,62 @@ func registerAuthRoutes(e *echo.Echo, client UserClient) {
 		}
 		return c.JSON(http.StatusOK, newAuthSessionResponse(session))
 	})
+
+	e.GET("/v1/users/:userId", func(c echo.Context) error {
+		profile, err := client.GetProfile(c.Request().Context(), &userv1.GetProfileRequest{
+			UserId: c.Param("userId"),
+		})
+		if err != nil {
+			return authHTTPError(err)
+		}
+		return c.JSON(http.StatusOK, newUserProfileResponse(profile))
+	})
+}
+
+func registerAdminRoutes(e *echo.Echo, client AdminClient) {
+	e.PATCH("/v1/admin/users/:userId/role", func(c echo.Context) error {
+		actorID, err := actorIDFromRequest(c)
+		if err != nil {
+			return err
+		}
+		var req updateUserRoleRequest
+		if err := c.Bind(&req); err != nil {
+			return echo.NewHTTPError(http.StatusBadRequest, "invalid request body")
+		}
+		if req.Role == "" {
+			return echo.NewHTTPError(http.StatusBadRequest, "role is required")
+		}
+		role, err := client.UpdateUserRole(c.Request().Context(), actorID, c.Param("userId"), req.Role)
+		if err != nil {
+			return adminHTTPError(err)
+		}
+		return c.JSON(http.StatusOK, updateUserRoleResponse{
+			UserID: c.Param("userId"),
+			Role:   role,
+		})
+	})
+}
+
+type updateUserRoleRequest struct {
+	Role string `json:"role"`
+}
+
+type updateUserRoleResponse struct {
+	UserID string `json:"userId"`
+	Role   string `json:"role"`
+}
+
+func adminHTTPError(err error) *echo.HTTPError {
+	msg := err.Error()
+	switch {
+	case strings.Contains(msg, "admin role required"):
+		return echo.NewHTTPError(http.StatusForbidden, msg)
+	case strings.Contains(msg, "user not found"):
+		return echo.NewHTTPError(http.StatusNotFound, msg)
+	case strings.Contains(msg, "role must be"):
+		return echo.NewHTTPError(http.StatusBadRequest, msg)
+	}
+	return echo.NewHTTPError(http.StatusBadGateway, "admin service is temporarily unavailable")
 }
 
 func authHTTPError(err error) *echo.HTTPError {
@@ -136,6 +205,8 @@ func authHTTPError(err error) *echo.HTTPError {
 			return echo.NewHTTPError(http.StatusConflict, grpcStatus.Message())
 		case codes.Unauthenticated:
 			return echo.NewHTTPError(http.StatusUnauthorized, grpcStatus.Message())
+		case codes.NotFound:
+			return echo.NewHTTPError(http.StatusNotFound, grpcStatus.Message())
 		}
 	}
 	return echo.NewHTTPError(http.StatusBadGateway, "authentication service is temporarily unavailable")
@@ -177,15 +248,72 @@ func registerProblemIntakeRoutes(e *echo.Echo, client ProblemClient) {
 			return echo.NewHTTPError(http.StatusBadRequest, "invalid request body")
 		}
 
+		var flatMetadata *problemv1.FlatZIPMetadata
+		if req.FlatMetadata != nil {
+			flatMetadata = &problemv1.FlatZIPMetadata{
+				Title:       req.FlatMetadata.Title,
+				TimeLimit:   req.FlatMetadata.TimeLimit,
+				MemoryLimit: req.FlatMetadata.MemoryLimit,
+				JudgeType:   req.FlatMetadata.JudgeType,
+			}
+		}
 		wizard, err := client.ValidateProblemImport(c.Request().Context(), &problemv1.ValidateProblemImportRequest{
 			ActorId:         actorID,
 			UploadObjectKey: req.UploadObjectKey,
 			SourceFilename:  req.SourceFilename,
+			FlatMetadata:    flatMetadata,
 		})
 		if err != nil {
 			return echo.NewHTTPError(http.StatusBadGateway, err.Error())
 		}
 		return c.JSON(http.StatusOK, newImportWizardResponse(wizard))
+	})
+
+	e.POST("/v1/problem-intake/inline-draft", func(c echo.Context) error {
+		actorID, err := actorIDFromRequest(c)
+		if err != nil {
+			return err
+		}
+
+		var req inlineDraftRequest
+		if err := c.Bind(&req); err != nil {
+			return echo.NewHTTPError(http.StatusBadRequest, "invalid request body")
+		}
+
+		samples := make([]*problemv1.InlineSample, 0, len(req.Samples))
+		for _, sample := range req.Samples {
+			samples = append(samples, &problemv1.InlineSample{
+				Input:  sample.Input,
+				Output: sample.Output,
+			})
+		}
+		testCases := make([]*problemv1.InlineTestCase, 0, len(req.TestCases))
+		for _, testCase := range req.TestCases {
+			testCases = append(testCases, &problemv1.InlineTestCase{
+				InputText:       testCase.InputText,
+				OutputText:      testCase.OutputText,
+				InputObjectKey:  testCase.InputObjectKey,
+				OutputObjectKey: testCase.OutputObjectKey,
+			})
+		}
+
+		draft, err := client.CreateInlineDraft(c.Request().Context(), &problemv1.CreateInlineDraftRequest{
+			ActorId:        actorID,
+			Title:          req.Title,
+			TimeLimit:      req.TimeLimit,
+			MemoryLimit:    req.MemoryLimit,
+			JudgeType:      req.JudgeType,
+			Locale:         req.Locale,
+			Statement:      req.Statement,
+			Samples:        samples,
+			TestCases:      testCases,
+			ClassId:        req.ClassID,
+			NoteToReviewer: req.NoteToReviewer,
+		})
+		if err != nil {
+			return echo.NewHTTPError(http.StatusBadGateway, err.Error())
+		}
+		return c.JSON(http.StatusCreated, newInlineDraftResponse(draft))
 	})
 
 	e.POST("/v1/problem-intake/teacher-quick-upload", func(c echo.Context) error {
@@ -360,6 +488,37 @@ type studentDraftSubmissionRequest struct {
 type validateProblemImportRequest struct {
 	UploadObjectKey string `json:"uploadObjectKey"`
 	SourceFilename  string `json:"sourceFilename"`
+	FlatMetadata    *struct {
+		Title       string `json:"title"`
+		TimeLimit   int32  `json:"timeLimit"`
+		MemoryLimit int32  `json:"memoryLimit"`
+		JudgeType   string `json:"judgeType"`
+	} `json:"flatMetadata"`
+}
+
+type inlineDraftRequest struct {
+	Title          string                  `json:"title"`
+	TimeLimit      int32                   `json:"timeLimit"`
+	MemoryLimit    int32                   `json:"memoryLimit"`
+	JudgeType      string                  `json:"judgeType"`
+	Locale         string                  `json:"locale"`
+	Statement      string                  `json:"statement"`
+	Samples        []inlineSampleRequest   `json:"samples"`
+	TestCases      []inlineTestCaseRequest `json:"testCases"`
+	ClassID        string                  `json:"classId"`
+	NoteToReviewer string                  `json:"noteToReviewer"`
+}
+
+type inlineSampleRequest struct {
+	Input  string `json:"input"`
+	Output string `json:"output"`
+}
+
+type inlineTestCaseRequest struct {
+	InputText       string `json:"inputText"`
+	OutputText      string `json:"outputText"`
+	InputObjectKey  string `json:"inputObjectKey"`
+	OutputObjectKey string `json:"outputObjectKey"`
 }
 
 type problemUploadResponse struct {
@@ -379,6 +538,12 @@ type problemDraftResponse struct {
 	ProblemID   string `json:"problemId,omitempty"`
 	OwnerUserID string `json:"ownerUserId"`
 	Visibility  string `json:"visibility"`
+}
+
+type inlineDraftResponse struct {
+	DraftID    string `json:"draftId"`
+	ProblemID  string `json:"problemId,omitempty"`
+	Visibility string `json:"visibility"`
 }
 
 type importWizardResponse struct {
@@ -442,6 +607,14 @@ func newProblemDraftResponse(draft *problemv1.ProblemDraft) problemDraftResponse
 	}
 }
 
+func newInlineDraftResponse(draft *problemv1.CreateInlineDraftResponse) inlineDraftResponse {
+	return inlineDraftResponse{
+		DraftID:    draft.GetDraftId(),
+		ProblemID:  draft.GetProblemId(),
+		Visibility: draft.GetVisibility(),
+	}
+}
+
 func newImportWizardResponse(wizard *problemv1.ImportWizard) importWizardResponse {
 	statements := make([]localizedStatement, 0, len(wizard.GetStatements()))
 	for _, statement := range wizard.GetStatements() {
@@ -491,13 +664,14 @@ func actorIDFromRequest(c echo.Context) (string, error) {
 }
 
 type submissionResponse struct {
-	SubmissionID string `json:"submissionId"`
-	ActorID      string `json:"actorId,omitempty"`
-	ProblemID    string `json:"problemId"`
-	ContestID    string `json:"contestId,omitempty"`
-	LanguageID   string `json:"languageId"`
-	Status       string `json:"status"`
-	Score        int64  `json:"score"`
+	SubmissionID  string `json:"submissionId"`
+	ActorID       string `json:"actorId,omitempty"`
+	ProblemID     string `json:"problemId"`
+	ContestID     string `json:"contestId,omitempty"`
+	LanguageID    string `json:"languageId"`
+	Status        string `json:"status"`
+	Score         int64  `json:"score"`
+	CreatedAtUnix int64  `json:"createdAtUnix,omitempty"`
 }
 
 type submissionEventResponse struct {
@@ -517,15 +691,30 @@ type submissionListResponse struct {
 
 type authSessionResponse struct {
 	UserID               string `json:"userId"`
+	Role                 string `json:"role,omitempty"`
 	AccessToken          string `json:"accessToken"`
 	RefreshToken         string `json:"refreshToken"`
 	AccessExpiresAtUnix  int64  `json:"accessExpiresAtUnix"`
 	RefreshExpiresAtUnix int64  `json:"refreshExpiresAtUnix"`
 }
 
+type userProfileResponse struct {
+	UserID        string `json:"userId"`
+	Username      string `json:"username"`
+	DisplayName   string `json:"displayName"`
+	AvatarURL     string `json:"avatarUrl,omitempty"`
+	BannerURL     string `json:"bannerUrl,omitempty"`
+	Bio           string `json:"bio,omitempty"`
+	Locale        string `json:"locale,omitempty"`
+	AcceptedCount int64  `json:"acceptedCount"`
+	Rating        int64  `json:"rating"`
+	Role          string `json:"role,omitempty"`
+}
+
 func newAuthSessionResponse(session *userv1.AuthSession) authSessionResponse {
 	return authSessionResponse{
 		UserID:               session.GetUserId(),
+		Role:                 session.GetRole(),
 		AccessToken:          session.GetAccessToken(),
 		RefreshToken:         session.GetRefreshToken(),
 		AccessExpiresAtUnix:  session.GetAccessExpiresAtUnix(),
@@ -533,15 +722,31 @@ func newAuthSessionResponse(session *userv1.AuthSession) authSessionResponse {
 	}
 }
 
+func newUserProfileResponse(profile *userv1.UserProfile) userProfileResponse {
+	return userProfileResponse{
+		UserID:        profile.GetUserId(),
+		Username:      profile.GetUsername(),
+		DisplayName:   profile.GetDisplayName(),
+		AvatarURL:     profile.GetAvatarUrl(),
+		BannerURL:     profile.GetBannerUrl(),
+		Bio:           profile.GetBio(),
+		Locale:        profile.GetLocale(),
+		AcceptedCount: profile.GetAcceptedCount(),
+		Rating:        profile.GetRating(),
+		Role:          profile.GetRole(),
+	}
+}
+
 func newSubmissionResponse(submission *submissionv1.Submission) submissionResponse {
 	return submissionResponse{
-		SubmissionID: submission.GetSubmissionId(),
-		ActorID:      submission.GetActorId(),
-		ProblemID:    submission.GetProblemId(),
-		ContestID:    submission.GetContestId(),
-		LanguageID:   submission.GetLanguageId(),
-		Status:       statusName(submission.GetStatus()),
-		Score:        submission.GetScore(),
+		SubmissionID:  submission.GetSubmissionId(),
+		ActorID:       submission.GetActorId(),
+		ProblemID:     submission.GetProblemId(),
+		ContestID:     submission.GetContestId(),
+		LanguageID:    submission.GetLanguageId(),
+		Status:        statusName(submission.GetStatus()),
+		Score:         submission.GetScore(),
+		CreatedAtUnix: submission.GetCreatedAtUnix(),
 	}
 }
 

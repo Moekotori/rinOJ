@@ -1,15 +1,21 @@
-CREATE TYPE submission_status AS ENUM (
-  'queued',
-  'compiling',
-  'running',
-  'accepted',
-  'wrong_answer',
-  'time_limit_exceeded',
-  'memory_limit_exceeded',
-  'runtime_error',
-  'compile_error',
-  'system_error'
-);
+DO $$
+BEGIN
+  CREATE TYPE submission_status AS ENUM (
+    'queued',
+    'compiling',
+    'running',
+    'accepted',
+    'wrong_answer',
+    'time_limit_exceeded',
+    'memory_limit_exceeded',
+    'runtime_error',
+    'compile_error',
+    'system_error'
+  );
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END
+$$;
 
 CREATE TABLE IF NOT EXISTS submissions (
   submission_id TEXT NOT NULL,

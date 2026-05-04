@@ -3,9 +3,11 @@ package grpcserver
 import (
 	"context"
 	"errors"
+	"maps"
 
 	userv1 "github.com/rin-oj/rin-oj/packages/sdk-go/rin/user/v1"
 	"github.com/rin-oj/rin-oj/services/user-service/internal/app"
+	"github.com/rin-oj/rin-oj/services/user-service/internal/domain"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -13,10 +15,14 @@ import (
 type Server struct {
 	userv1.UnimplementedUserServiceServer
 	service *app.Service
+	perm    *domain.PermissionService
 }
 
-func New(service *app.Service) *Server {
-	return &Server{service: service}
+func New(service *app.Service, perm *domain.PermissionService) *Server {
+	if perm == nil {
+		perm = domain.NewPermissionService()
+	}
+	return &Server{service: service, perm: perm}
 }
 
 func (s *Server) Register(ctx context.Context, req *userv1.RegisterRequest) (*userv1.AuthSession, error) {
@@ -53,6 +59,19 @@ func (s *Server) GetProfile(ctx context.Context, req *userv1.GetProfileRequest) 
 	return profile, nil
 }
 
-func (s *Server) CheckPermission(context.Context, *userv1.CheckPermissionRequest) (*userv1.CheckPermissionResponse, error) {
-	return &userv1.CheckPermissionResponse{Allowed: true, Reason: "development allow"}, nil
+func (s *Server) CheckPermission(ctx context.Context, req *userv1.CheckPermissionRequest) (*userv1.CheckPermissionResponse, error) {
+	attrs := maps.Clone(req.GetAttributes())
+	if attrs == nil {
+		attrs = make(map[string]string)
+	}
+	if role, ok := s.service.ActorRole(ctx, req.GetActorId()); ok {
+		attrs["role"] = role
+	}
+	dec := s.perm.CheckPermission(domain.CheckPermissionInput{
+		ActorID:    req.GetActorId(),
+		Action:     req.GetAction(),
+		Resource:   req.GetResource(),
+		Attributes: attrs,
+	})
+	return &userv1.CheckPermissionResponse{Allowed: dec.Allowed, Reason: dec.Reason}, nil
 }

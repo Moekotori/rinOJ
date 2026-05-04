@@ -35,6 +35,7 @@ message AuthSession {
   string refresh_token = 3;
   int64 access_expires_at_unix = 4;
   int64 refresh_expires_at_unix = 5;
+  string role = 6;
 }
 
 message GetProfileRequest {
@@ -51,6 +52,7 @@ message UserProfile {
   string locale = 7;
   int64 accepted_count = 8;
   int64 rating = 9;
+  string role = 10;
 }
 
 message CheckPermissionRequest {

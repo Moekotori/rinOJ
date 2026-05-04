@@ -7,6 +7,7 @@ option go_package = "github.com/rin-oj/rin-oj/packages/sdk-go/rin/problem/v1;pro
 service ProblemService {
   rpc CreateProblemDraft(CreateProblemDraftRequest) returns (ProblemDraft);
   rpc ValidateProblemImport(ValidateProblemImportRequest) returns (ImportWizard);
+  rpc CreateInlineDraft(CreateInlineDraftRequest) returns (CreateInlineDraftResponse);
   rpc TeacherQuickUpload(TeacherQuickUploadRequest) returns (ProblemDraft);
   rpc StudentDraftSubmission(StudentDraftSubmissionRequest) returns (ProblemDraft);
   rpc CreatePresignedUpload(CreatePresignedUploadRequest) returns (CreatePresignedUploadResponse);
@@ -71,6 +72,46 @@ message ValidateProblemImportRequest {
   string actor_id = 1;
   string upload_object_key = 2;
   string source_filename = 3;
+  optional FlatZIPMetadata flat_metadata = 4;
+}
+
+message FlatZIPMetadata {
+  string title = 1;
+  int32 time_limit = 2;
+  int32 memory_limit = 3;
+  string judge_type = 4;
+}
+
+message InlineSample {
+  string input = 1;
+  string output = 2;
+}
+
+message InlineTestCase {
+  string input_text = 1;
+  string output_text = 2;
+  string input_object_key = 3;
+  string output_object_key = 4;
+}
+
+message CreateInlineDraftRequest {
+  string actor_id = 1;
+  string title = 2;
+  int32 time_limit = 3;
+  int32 memory_limit = 4;
+  string judge_type = 5;
+  string locale = 6;
+  string statement = 7;
+  repeated InlineSample samples = 8;
+  repeated InlineTestCase test_cases = 9;
+  string class_id = 10;
+  string note_to_reviewer = 11;
+}
+
+message CreateInlineDraftResponse {
+  string draft_id = 1;
+  string problem_id = 2;
+  string visibility = 3;
 }
 
 message TeacherQuickUploadRequest {

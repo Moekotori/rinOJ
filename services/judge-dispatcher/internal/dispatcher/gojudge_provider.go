@@ -489,6 +489,11 @@ func sampleForProblem(problemID string) (sampleCase, bool) {
 	samples := map[string]sampleCase{
 		"P1001": {input: "1 2\n", output: "3\n"},
 		"P1024": {input: "5 2\n1 2 3 4 5\n1 3\n2 5\n", output: "6\n14\n"},
+		"P1100": {input: "7\n", output: "Odd\n"},
+		"P1101": {input: "4 9\n", output: "<\n"},
+		"P1102": {input: "10\n", output: "55\n"},
+		"P1103": {input: "BANANA\n", output: "3\n"},
+		"P1104": {input: "3 5\n", output: "15 16\n"},
 		"P2048": {input: "3 4\nA 100\nB 80\nA 30\nC 60\n", output: "A\nA\nA\nA\n"},
 		"P4096": {input: "4 5\n1 2 3\n1 3 2\n2 3 1\n2 4 2\n3 4 4\n", output: "5\n"},
 	}

@@ -4,9 +4,9 @@ import Editor from "@monaco-editor/react";
 import type { OnMount } from "@monaco-editor/react";
 import { useMutation } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { Activity, CheckCircle2, Code2, Loader2, Play, XCircle } from "lucide-react";
-import { useEffect, useState } from "react";
-import { createSubmission, createSubmissionEventSocket } from "@/lib/gateway";
+import { Activity, Check, CheckCircle2, Clipboard, Code2, Gauge, Loader2, Play, RotateCcw, XCircle } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { createSubmission, createSubmissionEventSocket, rememberLocalSubmission } from "@/lib/gateway";
 import { defaultLanguageId, getSupportedLanguage, starterCodeForLanguage, supportedLanguages } from "@/lib/language-options";
 import type { SubmissionEventResponse } from "@/lib/types";
 import { useSessionStore } from "@/lib/use-session-store";
@@ -15,12 +15,14 @@ import { StatusPill } from "./status-pill";
 
 type StreamState = "idle" | "connecting" | "open" | "closed" | "error";
 type Monaco = Parameters<OnMount>[1];
+type MonacoEditor = Parameters<OnMount>[0];
 type MonacoPosition = { lineNumber: number; column: number };
 type MonacoModelWithWords = {
   getWordUntilPosition: (position: MonacoPosition) => {
     startColumn: number;
     endColumn: number;
   };
+  getLineContent: (lineNumber: number) => string;
 };
 type MonacoRange = {
   startLineNumber: number;
@@ -34,7 +36,8 @@ type LocalVerdict = {
   score: number;
 };
 
-let cppCompletionDisposable: { dispose: () => void } | null = null;
+let completionDisposables: { dispose: () => void }[] = [];
+let conservativeCompletionEnabled = false;
 
 function formatMemory(bytes: number) {
   if (bytes <= 0) {
@@ -179,7 +182,7 @@ function buildLocalJudgeEvents(submissionId: string, problemId: string, language
   ] satisfies SubmissionEventResponse[];
 }
 
-function basicCompletion(label: string, detail: string, monaco: Monaco, range: MonacoRange, kind = monaco.languages.CompletionItemKind.Keyword) {
+function basicCompletion(label: string, detail: string, monaco: Monaco, range: MonacoRange, kind = monaco.languages.CompletionItemKind.Keyword, sortText = `20-${label}`) {
   return {
     label,
     filterText: label,
@@ -188,150 +191,88 @@ function basicCompletion(label: string, detail: string, monaco: Monaco, range: M
     documentation: detail,
     insertText: label,
     range,
-    sortText: label,
+    sortText,
   };
 }
 
-function snippetCompletion(label: string, detail: string, insertText: string, monaco: Monaco, range: MonacoRange) {
+function completionRange(model: MonacoModelWithWords, position: MonacoPosition) {
+  const word = model.getWordUntilPosition(position);
   return {
-    label,
-    filterText: label,
-    kind: monaco.languages.CompletionItemKind.Snippet,
-    detail,
-    documentation: detail,
-    insertText,
-    insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-    range,
-    sortText: `zz-${label}`,
+    startLineNumber: position.lineNumber,
+    endLineNumber: position.lineNumber,
+    startColumn: word.startColumn,
+    endColumn: word.endColumn,
   };
 }
 
-function registerCppCompletions(monaco: Monaco) {
-  if (cppCompletionDisposable) {
+function shouldOfferConservativeCompletion(model: MonacoModelWithWords, position: MonacoPosition, range: MonacoRange) {
+  if (!conservativeCompletionEnabled) {
+    return false;
+  }
+
+  const lineBeforeCursor = model.getLineContent(position.lineNumber).slice(0, position.column - 1);
+  const currentWord = lineBeforeCursor.slice(Math.max(0, range.startColumn - 1)).trim();
+  const lastCharacter = lineBeforeCursor.at(-1);
+
+  return currentWord.length >= 2 || lastCharacter === "." || lastCharacter === ":" || lastCharacter === "#" || lastCharacter === "<";
+}
+
+function registerConservativeCompletions(monaco: Monaco) {
+  if (completionDisposables.length > 0) {
     return;
   }
 
-  const keywords = [
-    "alignas",
-    "auto",
-    "bool",
-    "break",
-    "case",
-    "catch",
-    "char",
-    "class",
-    "const",
-    "continue",
-    "default",
-    "delete",
-    "do",
-    "double",
-    "else",
-    "enum",
-    "false",
-    "float",
-    "for",
-    "if",
-    "int",
-    "long",
-    "namespace",
-    "new",
-    "nullptr",
-    "private",
-    "protected",
-    "public",
-    "return",
-    "short",
-    "signed",
-    "sizeof",
-    "static",
-    "struct",
-    "switch",
-    "template",
-    "this",
-    "throw",
-    "true",
-    "try",
-    "typedef",
-    "typename",
-    "using",
-    "void",
-    "while",
+  const cppKeywords = [
+    "auto", "bool", "break", "case", "class", "const", "continue", "double", "else", "for", "if", "int", "long",
+    "namespace", "private", "public", "return", "struct", "template", "typename", "using", "void", "while",
   ];
-  const stlTypes = [
-    "array",
-    "bitset",
-    "deque",
-    "greater",
-    "less",
-    "map",
-    "multiset",
-    "pair",
-    "priority_queue",
-    "queue",
-    "set",
-    "stack",
-    "string",
-    "unordered_map",
-    "unordered_set",
-    "vector",
+  const cppTypes = [
+    "array", "bitset", "deque", "map", "multiset", "pair", "priority_queue", "queue", "set", "stack", "string",
+    "unordered_map", "unordered_set", "vector",
   ];
-  const functions = [
-    "abs",
-    "accumulate",
-    "begin",
-    "binary_search",
-    "cin",
-    "cout",
-    "emplace",
-    "emplace_back",
-    "empty",
-    "end",
-    "erase",
-    "find",
-    "front",
-    "gcd",
-    "insert",
-    "ios",
-    "lower_bound",
-    "make_pair",
-    "max",
-    "min",
-    "pop",
-    "pop_back",
-    "push",
-    "push_back",
-    "reverse",
-    "size",
-    "sort",
-    "sqrt",
-    "swap",
-    "top",
-    "upper_bound",
+  const cppFunctions = [
+    "abs", "accumulate", "binary_search", "cin", "cout", "emplace_back", "find", "gcd", "iota", "lower_bound",
+    "make_pair", "max", "min", "reverse", "sort", "sqrt", "swap", "upper_bound",
   ];
 
-  cppCompletionDisposable = monaco.languages.registerCompletionItemProvider("cpp", {
-    triggerCharacters: [".", ":", "<", "#"],
-    provideCompletionItems(model: MonacoModelWithWords, position: MonacoPosition) {
-      const word = model.getWordUntilPosition(position);
-      const range = {
-        startLineNumber: position.lineNumber,
-        endLineNumber: position.lineNumber,
-        startColumn: word.startColumn,
-        endColumn: word.endColumn,
-      };
+  const basicsByLanguage = {
+    cpp: [
+      ...cppKeywords.map((label) => [label, "C++ keyword", monaco.languages.CompletionItemKind.Keyword] as const),
+      ...cppTypes.map((label) => [label, "C++ STL container/type", monaco.languages.CompletionItemKind.Class] as const),
+      ...cppFunctions.map((label) => [label, "C++ standard library function", monaco.languages.CompletionItemKind.Function] as const),
+      ["include", "C++ preprocessor include", monaco.languages.CompletionItemKind.Module] as const,
+      ["std", "C++ standard namespace", monaco.languages.CompletionItemKind.Module] as const,
+    ],
+    c: ["int", "long", "double", "char", "struct", "typedef", "return", "for", "while", "if", "else", "scanf", "printf", "qsort", "memset"].map((label) => [label, "C keyword or standard library helper", monaco.languages.CompletionItemKind.Keyword] as const),
+    python: ["import", "def", "class", "return", "for", "while", "if", "elif", "else", "deque", "defaultdict", "Counter", "heapq", "bisect_left"].map((label) => [label, "Python keyword or library symbol", monaco.languages.CompletionItemKind.Function] as const),
+    java: ["public", "class", "static", "void", "int", "long", "String", "ArrayList", "HashMap", "PriorityQueue", "Arrays", "StringBuilder"].map((label) => [label, "Java keyword or library symbol", monaco.languages.CompletionItemKind.Class] as const),
+    go: ["func", "package", "import", "var", "const", "for", "range", "fmt", "bufio", "sort"].map((label) => [label, "Go keyword or library symbol", monaco.languages.CompletionItemKind.Function] as const),
+    rust: ["fn", "let", "mut", "for", "while", "if", "match", "Vec", "VecDeque", "BinaryHeap", "HashMap", "split_whitespace"].map((label) => [label, "Rust keyword or library helper", monaco.languages.CompletionItemKind.Class] as const),
+    javascript: ["const", "let", "function", "return", "for", "while", "if", "else", "Number", "BigInt", "Map", "Set"].map((label) => [label, "JavaScript keyword or library symbol", monaco.languages.CompletionItemKind.Function] as const),
+    kotlin: ["fun", "val", "var", "if", "else", "for", "while", "return", "Long", "Int", "List", "MutableList"].map((label) => [label, "Kotlin keyword or library symbol", monaco.languages.CompletionItemKind.Keyword] as const),
+    ruby: ["def", "end", "if", "else", "elsif", "while", "do", "return", "Array", "Hash", "STDIN"].map((label) => [label, "Ruby keyword or library symbol", monaco.languages.CompletionItemKind.Keyword] as const),
+    php: ["function", "return", "if", "else", "foreach", "while", "array", "trim", "explode", "STDIN"].map((label) => [label, "PHP keyword or library symbol", monaco.languages.CompletionItemKind.Keyword] as const),
+  } satisfies Record<string, readonly (readonly [string, string, number])[]>;
 
-      return {
-        suggestions: [
-          ...keywords.map((item) => basicCompletion(item, "C++ keyword", monaco, range)),
-          ...stlTypes.map((item) => basicCompletion(item, "C++ STL type", monaco, range, monaco.languages.CompletionItemKind.Class)),
-          ...functions.map((item) => basicCompletion(item, "C++ standard/library symbol", monaco, range, monaco.languages.CompletionItemKind.Function)),
-          snippetCompletion("main", "minimal main function", "int main() {\n  ${1}\n  return 0;\n}", monaco, range),
-          snippetCompletion("fastio", "fast stream setup", "ios::sync_with_stdio(false);\ncin.tie(nullptr);", monaco, range),
-        ],
-      };
-    },
-  });
+  const completionLanguages = Object.keys(basicsByLanguage) as Array<keyof typeof basicsByLanguage>;
+  completionDisposables = completionLanguages.map((language) =>
+    monaco.languages.registerCompletionItemProvider(language, {
+      triggerCharacters: [".", ":", "<", "#"],
+      provideCompletionItems(model: MonacoModelWithWords, position: MonacoPosition) {
+        const range = completionRange(model, position);
+
+        if (!shouldOfferConservativeCompletion(model, position, range)) {
+          return { suggestions: [] };
+        }
+
+        return {
+          suggestions: basicsByLanguage[language].map(([label, detail, kind], index) =>
+            basicCompletion(label, detail, monaco, range, kind, `20-${index}-${label}`),
+          ),
+        };
+      },
+    }),
+  );
 }
 
 const handleEditorMount: OnMount = (editor, monaco) => {
@@ -339,49 +280,51 @@ const handleEditorMount: OnMount = (editor, monaco) => {
     base: "vs",
     inherit: true,
     rules: [
-      { token: "keyword", foreground: "8B5CF6", fontStyle: "bold" },
-      { token: "number", foreground: "0F766E" },
-      { token: "string", foreground: "BE185D" },
-      { token: "comment", foreground: "8A819A", fontStyle: "italic" },
+      { token: "keyword", foreground: "1D4ED8", fontStyle: "bold" },
+      { token: "number", foreground: "047857" },
+      { token: "string", foreground: "B45309" },
+      { token: "comment", foreground: "64748B", fontStyle: "italic" },
       { token: "type", foreground: "2563EB" },
     ],
     colors: {
-      "editor.background": "#FFFBFE",
-      "editor.foreground": "#272033",
-      "editorLineNumber.foreground": "#B9AFC9",
-      "editorLineNumber.activeForeground": "#BE5E7B",
-      "editorCursor.foreground": "#EC4899",
-      "editor.selectionBackground": "#FFD3DC88",
-      "editor.lineHighlightBackground": "#FFF1F566",
-      "editorIndentGuide.background1": "#F0D7E5",
-      "editorIndentGuide.activeBackground1": "#D8B4FE",
-      "editorSuggestWidget.background": "#FFFDFB",
-      "editorSuggestWidget.border": "#FFD3DC",
-      "editorSuggestWidget.selectedBackground": "#FFE4EC",
+      "editor.background": "#FFFFFF",
+      "editor.foreground": "#0F172A",
+      "editorLineNumber.foreground": "#94A3B8",
+      "editorLineNumber.activeForeground": "#334155",
+      "editorCursor.foreground": "#1D4ED8",
+      "editor.selectionBackground": "#BFDBFE88",
+      "editor.lineHighlightBackground": "#F8FAFC",
+      "editorIndentGuide.background1": "#E2E8F0",
+      "editorIndentGuide.activeBackground1": "#94A3B8",
+      "editorSuggestWidget.background": "#FFFFFF",
+      "editorSuggestWidget.border": "#CBD5E1",
+      "editorSuggestWidget.selectedBackground": "#EFF6FF",
     },
   });
 
-  registerCppCompletions(monaco);
+  registerConservativeCompletions(monaco);
   monaco.editor.setTheme("rin-code-light");
-  editor.focus();
+  // Do not focus Monaco on mount. Auto focus makes browsers scroll the page
+  // down to the workspace as soon as the home page opens, which feels like an
+  // unexpected page jump. The editor will focus naturally when the user clicks it.
 };
 
-export function SubmissionPanel({ initialProblemId = "prob_1" }: Readonly<{ initialProblemId?: string }>) {
+export function SubmissionPanel({ initialProblemId = "P1001" }: Readonly<{ initialProblemId?: string }>) {
   const actorId = useSessionStore((state) => state.actorId);
   const { t } = useTranslation();
+  const editorRef = useRef<MonacoEditor | null>(null);
   const [problemId, setProblemId] = useState(initialProblemId);
   const [languageId, setLanguageId] = useState(defaultLanguageId);
-  const [sourceCode, setSourceCode] = useState(starterCodeForLanguage(defaultLanguageId));
+  const [sourceCode, setSourceCode] = useState("");
   const [events, setEvents] = useState<SubmissionEventResponse[]>([]);
   const [streamState, setStreamState] = useState<StreamState>("idle");
+  const [copiedSource, setCopiedSource] = useState(false);
+  const [fastIOFeedback, setFastIOFeedback] = useState<"idle" | "inserted" | "enabled">("idle");
+  const [completionEnabled, setCompletionEnabled] = useState(false);
   const activeLanguage = getSupportedLanguage(languageId);
 
   const handleLanguageChange = (nextLanguageId: string) => {
-    const currentStarter = starterCodeForLanguage(languageId);
     setLanguageId(nextLanguageId);
-    setSourceCode((currentSource) =>
-      currentSource.trim().length === 0 || currentSource === currentStarter ? starterCodeForLanguage(nextLanguageId) : currentSource,
-    );
   };
 
   const submitMutation = useMutation({
@@ -399,6 +342,80 @@ export function SubmissionPanel({ initialProblemId = "prob_1" }: Readonly<{ init
   const usingLocalJudge = submissionId?.startsWith("local_") ?? false;
 
   useEffect(() => {
+    conservativeCompletionEnabled = completionEnabled;
+  }, [completionEnabled]);
+
+  const toggleCompletion = () => {
+    setCompletionEnabled((enabled) => {
+      const nextEnabled = !enabled;
+      conservativeCompletionEnabled = nextEnabled;
+
+      if (nextEnabled) {
+        window.requestAnimationFrame(() => {
+          editorRef.current?.getAction("editor.action.triggerSuggest")?.run();
+        });
+      }
+
+      return nextEnabled;
+    });
+  };
+
+  const resetStarterCode = () => {
+    setSourceCode(starterCodeForLanguage(languageId));
+    setEvents([]);
+    setStreamState("idle");
+  };
+
+  const copySourceCode = async () => {
+    await navigator.clipboard.writeText(sourceCode);
+    setCopiedSource(true);
+    window.setTimeout(() => setCopiedSource(false), 1200);
+  };
+
+  const insertFastIO = () => {
+    if (!languageId.startsWith("cpp")) {
+      return;
+    }
+
+    if (sourceCode.includes("ios::sync_with_stdio(false)")) {
+      setFastIOFeedback("enabled");
+      window.setTimeout(() => setFastIOFeedback("idle"), 1200);
+      return;
+    }
+
+    const fastIOLines = "  ios::sync_with_stdio(false);\n  cin.tie(nullptr);\n\n";
+    const trimmedSource = sourceCode.trim();
+    let nextSource: string;
+
+    if (!trimmedSource) {
+      nextSource = `#include <bits/stdc++.h>
+using namespace std;
+
+int main() {
+${fastIOLines}  return 0;
+}
+`;
+    } else {
+      const mainPattern = /(int\s+main\s*\([^)]*\)\s*\{\s*)/;
+      if (mainPattern.test(sourceCode)) {
+        // Keep the helper near the start of main so beginners can see why it is there.
+        nextSource = sourceCode.replace(mainPattern, `$1\n${fastIOLines}`);
+      } else {
+        nextSource = `${sourceCode.replace(/\s*$/, "")}
+
+int main() {
+${fastIOLines}  return 0;
+}
+`;
+      }
+    }
+
+    setSourceCode(nextSource);
+    setFastIOFeedback("inserted");
+    window.setTimeout(() => setFastIOFeedback("idle"), 1200);
+  };
+
+  useEffect(() => {
     if (!submissionId) {
       return;
     }
@@ -412,6 +429,17 @@ export function SubmissionPanel({ initialProblemId = "prob_1" }: Readonly<{ init
       const timers = localEvents.map((event, index) =>
         window.setTimeout(() => {
           setEvents((currentEvents) => [...currentEvents, event]);
+          rememberLocalSubmission({
+            submissionId,
+            actorId,
+            problemId,
+            languageId,
+            status: event.status,
+            score: event.status === "accepted" ? 100 : 0,
+            timeMs: event.timeMs,
+            memoryBytes: event.memoryBytes,
+            createdAtUnix: submitMutation.data?.createdAtUnix ?? Math.floor(Date.now() / 1000),
+          });
           if (event.final) {
             setStreamState("closed");
           }
@@ -435,6 +463,17 @@ export function SubmissionPanel({ initialProblemId = "prob_1" }: Readonly<{ init
       try {
         const event = JSON.parse(message.data) as SubmissionEventResponse;
         setEvents((currentEvents) => [...currentEvents, event]);
+        rememberLocalSubmission({
+          submissionId,
+          actorId,
+          problemId,
+          languageId,
+          status: event.status,
+          score: event.status === "accepted" ? 100 : 0,
+          timeMs: event.timeMs,
+          memoryBytes: event.memoryBytes,
+          createdAtUnix: submitMutation.data?.createdAtUnix ?? Math.floor(Date.now() / 1000),
+        });
 
         if (event.final) {
           socket.close();
@@ -455,17 +494,18 @@ export function SubmissionPanel({ initialProblemId = "prob_1" }: Readonly<{ init
     return () => {
       socket.close();
     };
-  }, [languageId, problemId, sourceCode, submissionId]);
+  }, [actorId, languageId, problemId, sourceCode, submissionId, submitMutation.data?.createdAtUnix]);
 
   return (
-    <section className="rin-workbench-panel rounded-xl p-6 text-base">
-      <div className="flex flex-wrap items-start justify-between gap-4">
+    <section className="rin-workbench-panel rounded-md p-5 text-base">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <div className="flex items-center gap-2 text-base font-semibold text-slate-500">
-            <Code2 className="h-5 w-5" />
+          <div className="flex items-center gap-2 text-base font-semibold text-slate-600">
+            <span className="rin-icon-tile">
+              <Code2 className="h-4 w-4" />
+            </span>
             {t("submission.name")}
           </div>
-          <h2 className="mt-2 text-3xl font-black text-slate-900">{t("submission.title")}</h2>
         </div>
         <StatusPill tone={visibleStatus === "accepted" ? "good" : visibleStatus === "queued" || visibleStatus === "running" ? "warn" : "neutral"}>
           {visibleStatus}
@@ -474,35 +514,71 @@ export function SubmissionPanel({ initialProblemId = "prob_1" }: Readonly<{ init
 
       <JudgeProgress status={visibleStatus} />
 
-      <div className="mt-5 grid gap-3 sm:grid-cols-[1fr_180px]">
+      <div className="mt-4 grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(220px,320px)]">
         <label className="grid gap-1 text-base font-semibold">
           {t("submission.problemId")}
           <input
-            className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-lg"
+            className="w-full rounded-md border border-slate-300 bg-white px-4 py-3 text-lg outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
             value={problemId}
             onChange={(event) => setProblemId(event.target.value)}
           />
         </label>
         <label className="grid gap-1 text-base font-semibold">
           {t("submission.languageId")}
-          <select className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-lg" value={languageId} onChange={(event) => handleLanguageChange(event.target.value)}>
+          <select
+            className="w-full min-w-0 max-w-full cursor-pointer truncate rounded-md border border-slate-300 bg-white px-4 py-3 text-lg outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+            value={languageId}
+            onChange={(event) => handleLanguageChange(event.target.value)}
+          >
             {supportedLanguages.map((language) => (
               <option key={language.id} value={language.id}>
-                {language.label}
+                {language.shortLabel}
               </option>
             ))}
           </select>
         </label>
       </div>
 
-      <div className="rin-code-editor mt-5 overflow-hidden rounded-xl border border-pink-100">
+      <div className="rin-code-editor mt-5 overflow-hidden rounded-md border border-slate-200">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 bg-slate-50 px-3 py-2">
+          <div className="text-sm font-bold text-slate-500">{activeLanguage.label}</div>
+          <div className="flex flex-wrap gap-2">
+            <button
+              aria-pressed={completionEnabled}
+              className={`rin-soft-button px-3 py-2 text-sm font-bold ${completionEnabled ? "border-blue-300 bg-blue-50 text-blue-800" : ""}`}
+              title={completionEnabled ? "Disable code completion" : "Enable code completion"}
+              type="button"
+              onClick={toggleCompletion}
+            >
+              <Code2 className="h-4 w-4" />
+              {completionEnabled ? "Completion On" : "Completion Off"}
+            </button>
+            <button className="rin-soft-button px-3 py-2 text-sm font-bold" type="button" onClick={copySourceCode}>
+              {copiedSource ? <Check className="h-4 w-4" /> : <Clipboard className="h-4 w-4" />}
+              {copiedSource ? "已复制" : "复制代码"}
+            </button>
+            {languageId.startsWith("cpp") ? (
+              <button className="rin-soft-button px-3 py-2 text-sm font-bold" type="button" onClick={insertFastIO}>
+                {fastIOFeedback === "idle" ? <Gauge className="h-4 w-4" /> : <Check className="h-4 w-4" />}
+                {fastIOFeedback === "enabled" ? "已启用" : fastIOFeedback === "inserted" ? "已插入" : "Fast I/O"}
+              </button>
+            ) : null}
+            <button className="rin-soft-button px-3 py-2 text-sm font-bold" type="button" onClick={resetStarterCode}>
+              <RotateCcw className="h-4 w-4" />
+              重置模板
+            </button>
+          </div>
+        </div>
         <Editor
           height="clamp(560px, 62vh, 860px)"
           language={activeLanguage.monacoLanguage}
           path={`main.${activeLanguage.id}`}
           theme="rin-code-light"
           value={sourceCode}
-          onMount={handleEditorMount}
+          onMount={(editor, monaco) => {
+            editorRef.current = editor;
+            handleEditorMount(editor, monaco);
+          }}
           onChange={(value) => setSourceCode(value ?? "")}
           options={{
             autoClosingBrackets: "always",
@@ -514,32 +590,33 @@ export function SubmissionPanel({ initialProblemId = "prob_1" }: Readonly<{ init
             fontFamily:
               '"Cascadia Mono", "Maple Mono NF CN", "Maple Mono", "Sarasa Mono SC", "LXGW WenKai Mono", "JetBrains Mono", "Fira Code", Consolas, monospace',
             fontLigatures: true,
-            fontSize: 22,
+            fontSize: 18,
             fontWeight: "500",
             letterSpacing: 0.2,
-            lineHeight: 36,
+            lineHeight: 30,
             lineNumbersMinChars: 3,
             minimap: { enabled: false },
             padding: { top: 14, bottom: 14 },
-            parameterHints: { enabled: true, cycle: true },
-            quickSuggestions: { other: true, comments: false, strings: false },
+            parameterHints: { enabled: false },
+            quickSuggestions: { other: completionEnabled, comments: false, strings: false },
             renderLineHighlight: "all",
             renderWhitespace: "selection",
             roundedSelection: true,
             scrollbar: { verticalScrollbarSize: 10, horizontalScrollbarSize: 10 },
             scrollBeyondLastLine: false,
-            snippetSuggestions: "bottom",
+            snippetSuggestions: "none",
             smoothScrolling: true,
             suggest: {
-              localityBonus: true,
-              matchOnWordStartOnly: false,
-              preview: true,
-              selectionMode: "always",
+              localityBonus: false,
+              matchOnWordStartOnly: true,
+              preview: false,
+              selectionMode: "never",
               showSnippets: false,
+              showWords: false,
             },
-            suggestOnTriggerCharacters: true,
-            tabCompletion: "on",
-            wordBasedSuggestions: "allDocuments",
+            suggestOnTriggerCharacters: completionEnabled,
+            tabCompletion: "off",
+            wordBasedSuggestions: "off",
             wordWrap: "on",
           }}
         />
@@ -547,7 +624,7 @@ export function SubmissionPanel({ initialProblemId = "prob_1" }: Readonly<{ init
 
       <div className="mt-4 flex flex-wrap items-center gap-3">
         <button
-          className="inline-flex items-center gap-2 rounded-xl bg-sky-500 px-5 py-3 text-lg font-bold text-white disabled:opacity-50"
+          className="inline-flex items-center gap-2 rounded-md bg-blue-700 px-5 py-3 text-lg font-bold text-white shadow-sm transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50"
           disabled={submitMutation.isPending}
           onClick={() => submitMutation.mutate()}
           type="button"
@@ -562,14 +639,14 @@ export function SubmissionPanel({ initialProblemId = "prob_1" }: Readonly<{ init
       </div>
 
       {usingLocalJudge ? (
-        <div className="mt-4 rounded-xl border border-sky-100 bg-sky-50 p-3 text-sm text-sky-900">
+        <div className="mt-4 rounded-md border border-sky-200 bg-sky-50 p-3 text-sm text-sky-900">
           <div className="font-bold">{t("submission.localJudge")}</div>
           <div className="mt-1">{t("submission.localJudgeHelp")}</div>
         </div>
       ) : null}
 
       {submitMutation.data ? (
-        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="mt-4 rounded-xl border border-amber-100 bg-amber-50 p-4 text-base font-semibold text-amber-900">
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="mt-4 rounded-md border border-amber-200 bg-amber-50 p-4 text-base font-semibold text-amber-900">
           {t("submission.queued")}: {submitMutation.data.submissionId}
         </motion.div>
       ) : null}
@@ -578,7 +655,7 @@ export function SubmissionPanel({ initialProblemId = "prob_1" }: Readonly<{ init
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          className={`mt-4 rounded-xl border p-4 shadow-sm ${verdictTone(finalEvent.status)}`}
+          className={`mt-4 rounded-md border p-4 shadow-sm ${verdictTone(finalEvent.status)}`}
         >
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
@@ -595,7 +672,7 @@ export function SubmissionPanel({ initialProblemId = "prob_1" }: Readonly<{ init
         </motion.div>
       ) : null}
 
-      <div className="mt-4 rounded-xl border border-slate-200 bg-white/76 p-4">
+      <div className="rin-problem-section mt-4 p-4">
         <div className="flex items-center justify-between gap-3">
           <h3 className="text-base font-bold text-slate-900">{t("submission.timeline")}</h3>
           <span className="text-sm font-medium text-slate-500">
@@ -607,11 +684,11 @@ export function SubmissionPanel({ initialProblemId = "prob_1" }: Readonly<{ init
             <p className="text-base text-slate-500">{t("submission.emptyTimeline")}</p>
           ) : (
             events.map((event, index) => (
-              <div key={`${event.status}-${event.testCaseIndex}-${index}`} className={`grid gap-1 rounded-xl border px-3 py-2 text-sm ${event.final ? verdictTone(event.status) : "border-slate-100 bg-slate-50"}`}>
+              <div key={`${event.status}-${event.testCaseIndex}-${index}`} className={`grid gap-1 rounded-md border px-3 py-2 text-sm ${event.final ? verdictTone(event.status) : "border-slate-200 bg-slate-50"}`}>
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <span className="font-semibold text-slate-900">
                     #{index + 1} {event.status}
-                    {event.final && isFailedVerdict(event.status) ? ` · 挂在 ${formatCaseLabel(event.testCaseIndex)}` : ""}
+                    {event.final && isFailedVerdict(event.status) ? ` / 停在 ${formatCaseLabel(event.testCaseIndex)}` : ""}
                   </span>
                   <span className="text-xs font-medium text-slate-500">
                     {formatCaseLabel(event.testCaseIndex)} / {event.timeMs} ms / {formatMemory(event.memoryBytes)}
@@ -624,32 +701,41 @@ export function SubmissionPanel({ initialProblemId = "prob_1" }: Readonly<{ init
         </div>
       </div>
 
-      {submitMutation.error ? <div className="mt-4 rounded-xl border border-rose-100 bg-rose-50 p-3 text-sm text-rose-900">{submitMutation.error.message}</div> : null}
+      {submitMutation.error ? <div className="mt-4 rounded-md border border-rose-200 bg-rose-50 p-3 text-sm text-rose-900">{submitMutation.error.message}</div> : null}
     </section>
   );
 }
 
 function JudgeProgress({ status }: Readonly<{ status: string }>) {
+  const idle = status === "ready" || status === "idle";
   const failed = isFailedVerdict(status);
   const accepted = status === "accepted";
-  const activeStep = status === "queued" || status === "ready" ? 0 : status === "compiling" ? 1 : status === "running" ? 2 : 3;
+  const failureStepByStatus: Record<string, number> = {
+    compile_error: 1,
+    runtime_error: 2,
+    time_limit_exceeded: 2,
+    memory_limit_exceeded: 2,
+    wrong_answer: 2,
+    system_error: 3,
+  };
+  const activeStep = idle ? -1 : status === "queued" ? 0 : status === "compiling" ? 1 : status === "running" ? 2 : failed ? (failureStepByStatus[status] ?? 3) : 3;
   const steps = [
-    { label: "入队", detail: "Queue" },
+    { label: "队列", detail: "Queue" },
     { label: "编译", detail: "Compile" },
     { label: "运行", detail: "Run tests" },
     { label: "结果", detail: "Verdict" },
   ];
 
   return (
-    <div className="mt-5 grid gap-2 rounded-xl border border-slate-200 bg-white/72 p-3 sm:grid-cols-4">
+    <div className="mt-3 grid gap-2 rounded-md border border-slate-200 bg-slate-50 p-3 sm:grid-cols-4">
       {steps.map((step, index) => {
-        const done = index < activeStep || accepted;
-        const current = index === activeStep && !accepted && !failed;
-        const error = failed && index === 3;
+        const done = !idle && (accepted || index < activeStep);
+        const current = !idle && index === activeStep && !accepted && !failed;
+        const error = failed && index === activeStep;
         return (
           <div
             key={step.label}
-            className={`rounded-lg border px-3 py-2 ${
+            className={`rounded-md border px-3 py-2 ${
               error ? "border-rose-200 bg-rose-50 text-rose-800" : done ? "border-emerald-200 bg-emerald-50 text-emerald-800" : current ? "border-sky-200 bg-sky-50 text-sky-800" : "border-slate-200 bg-slate-50 text-slate-500"
             }`}
           >

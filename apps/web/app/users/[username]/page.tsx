@@ -1,53 +1,186 @@
 "use client";
 
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
-import { notFound, useParams } from "next/navigation";
-import { Award, CalendarDays, Eye, Flame, Heart, MessageCircle, PencilLine, Save, Trophy, UserPlus } from "lucide-react";
+import { useParams } from "next/navigation";
+import {
+  Activity,
+  Award,
+  CalendarDays,
+  Eye,
+  Flame,
+  Heart,
+  MessageCircle,
+  PencilLine,
+  Save,
+  Shield,
+  Trophy,
+  UserPlus,
+} from "lucide-react";
 import { RinMascot } from "@rin-oj/rin-ui";
 import { OJShell } from "@/components/oj-shell";
 import { VerdictBadge } from "@/components/verdict-badge";
+import { getUserProfile } from "@/lib/gateway";
 import { judgements, userProfiles } from "@/lib/mock-oj-data";
+import { useSessionStore } from "@/lib/use-session-store";
 import { useTranslation } from "@/lib/use-translation";
 
 export default function UserProfilePage() {
   const params = useParams<{ username: string }>();
   const { locale, t } = useTranslation();
-  const profile = userProfiles.find((item) => item.username === params.username);
-
-  if (!profile) {
-    notFound();
-  }
+  const seededProfile = userProfiles.find((item) => item.username === params.username);
+  const profile = seededProfile ?? createDefaultProfile(params.username);
+  const sessionDisplayName = useSessionStore((state) => state.displayName);
+  const sessionActorId = useSessionStore((state) => state.actorId);
+  const isAuthenticated = useSessionStore((state) => state.isAuthenticated);
+  const accountRole = useSessionStore((state) => state.accountRole);
+  const currentAvatarUrl = useSessionStore((state) => state.avatarUrl);
+  const setAccountProfile = useSessionStore((state) => state.setAccountProfile);
+  const setSessionAvatarUrl = useSessionStore((state) => state.setAvatarUrl);
+  const [sessionProfile, setSessionProfile] = useState<{
+    userId?: string;
+    username?: string;
+    displayName?: string;
+    role?: string;
+  } | null>(null);
+  const [viewedProfileRole, setViewedProfileRole] = useState<string | null>(null);
+  const isOwnProfile =
+    isAuthenticated &&
+    (!seededProfile ||
+      profile.username === sessionDisplayName ||
+      profile.username === sessionActorId ||
+      profile.username === sessionProfile?.userId ||
+      profile.username === sessionProfile?.username ||
+      profile.username === sessionProfile?.displayName);
+  const profileExtras = profile as { showAdminTag?: boolean };
+  const syncedAccountRole = sessionProfile?.role?.toLowerCase().trim() === "admin" ? "admin" : accountRole;
+  const showAdminTag =
+    viewedProfileRole?.toLowerCase().trim() === "admin" ||
+    (isOwnProfile && syncedAccountRole === "admin") ||
+    profileExtras.showAdminTag === true;
 
   const recentJudgements = judgements.filter((judgement) => judgement.user === profile.username);
+
+  useEffect(() => {
+    if (!isAuthenticated || !sessionActorId.trim()) {
+      return;
+    }
+
+    let cancelled = false;
+    getUserProfile(sessionActorId)
+      .then((remoteProfile) => {
+        if (cancelled) {
+          return;
+        }
+        setSessionProfile({
+          userId: remoteProfile.userId,
+          username: remoteProfile.username,
+          displayName: remoteProfile.displayName,
+          role: remoteProfile.role,
+        });
+        setAccountProfile({
+          displayName: remoteProfile.displayName || remoteProfile.username || sessionActorId,
+          accountRole: remoteProfile.role,
+          avatarUrl: remoteProfile.avatarUrl,
+        });
+      })
+      .catch(() => {
+        // Keep the cached session if the gateway is offline.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthenticated, sessionActorId, setAccountProfile]);
+
+  useEffect(() => {
+    if (!params.username.trim()) {
+      return;
+    }
+
+    let cancelled = false;
+    getUserProfile(params.username)
+      .then((remoteProfile) => {
+        if (cancelled) {
+          return;
+        }
+        setViewedProfileRole(remoteProfile.role ?? null);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setViewedProfileRole(null);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [params.username]);
 
   return (
     <OJShell>
       <div className="mx-auto grid w-full max-w-7xl gap-5 px-4 py-5 sm:px-6 lg:grid-cols-[minmax(0,1fr)_360px] lg:px-8">
-        <section className="rin-card overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm lg:col-span-2">
-          <div className="rin-hero-strip px-5 py-5">
-            <div className="flex flex-wrap items-end justify-between gap-4">
-              <div className="flex items-center gap-4">
-                <div className="rounded-2xl border border-white/80 bg-white/70 p-2 shadow-sm">
-                  <RinMascot className="h-16 w-16" />
-                </div>
-                <div>
-                  <div className="rin-kana-badge">{t("profile.title")}</div>
-                  <h1 className="mt-2 text-3xl font-black text-slate-950">{profile.displayName}</h1>
-                  <p className="mt-1 text-sm font-semibold text-pink-700">{locale === "zh-CN" ? profile.titleZh : profile.title}</p>
+        <section className="relative overflow-hidden rounded-3xl border border-pink-100/80 bg-gradient-to-br from-pink-50/90 via-white to-sky-50/50 shadow-[0_24px_64px_rgba(58,45,88,0.07),inset_0_1px_0_rgba(255,255,255,0.95)] ring-1 ring-white/90 lg:col-span-2">
+          <div
+            className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-gradient-to-br from-fuchsia-200/40 to-sky-200/30 blur-3xl"
+            aria-hidden
+          />
+          <div
+            className="pointer-events-none absolute -bottom-16 -left-12 h-48 w-48 rounded-full bg-gradient-to-tr from-pink-200/35 to-transparent blur-2xl"
+            aria-hidden
+          />
+          <div className="relative rin-hero-strip border-0 bg-transparent px-5 py-7 shadow-none sm:px-8 sm:py-8">
+            <div className="rin-hero-inner flex flex-wrap items-end justify-between gap-6">
+              <div className="flex min-w-0 flex-1 flex-col gap-5 sm:flex-row sm:items-start">
+                <ProfileAvatar
+                  username={profile.username}
+                  isOwnProfile={isOwnProfile}
+                  sessionAvatarUrl={currentAvatarUrl}
+                  setSessionAvatarUrl={setSessionAvatarUrl}
+                  locale={locale}
+                />
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="rin-icon-tile rin-icon-tile--amber">
+                      <Award className="h-3.5 w-3.5" aria-hidden />
+                    </span>
+                    <span className="text-xs font-black uppercase tracking-[0.12em] text-pink-800/80">{t("profile.title")}</span>
+                    {showAdminTag ? (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-violet-600 via-fuchsia-600 to-pink-600 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-[0.14em] text-white shadow-[0_2px_12px_rgba(139,92,246,0.35)]">
+                        <Shield className="h-3 w-3 opacity-95" aria-hidden />
+                        {t("profile.adminTag")}
+                      </span>
+                    ) : null}
+                  </div>
+                  <h1 className="mt-2.5 text-balance text-3xl font-black tracking-tight text-slate-950 sm:text-[2.15rem] sm:leading-tight">
+                    {profile.displayName}
+                  </h1>
+                  <p className="mt-1.5 text-[15px] font-semibold text-pink-700/95">{locale === "zh-CN" ? profile.titleZh : profile.title}</p>
                 </div>
               </div>
-              <div className="grid gap-3">
-                <p className="max-w-lg rounded-lg bg-white/65 px-3 py-2 text-sm font-medium text-slate-700">{locale === "zh-CN" ? profile.signatureZh : profile.signature}</p>
+              <div className="grid w-full max-w-xl gap-4 sm:w-auto sm:min-w-[280px]">
+                {(locale === "zh-CN" ? profile.signatureZh : profile.signature) ? (
+                  <p className="rin-problem-section border-white/80 bg-white/55 px-4 py-3 text-sm font-medium leading-relaxed text-slate-700 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] backdrop-blur-sm">
+                    {locale === "zh-CN" ? profile.signatureZh : profile.signature}
+                  </p>
+                ) : null}
                 <div className="flex flex-wrap gap-2">
                   <button className="rin-soft-button px-3 py-2 text-sm" type="button">
                     <UserPlus className="h-4 w-4" />
                     {locale === "zh-CN" ? "关注" : "Follow"}
                   </button>
-                  <button className="rin-soft-button px-3 py-2 text-sm" type="button">
-                    <MessageCircle className="h-4 w-4" />
-                    {locale === "zh-CN" ? "私信" : "Message"}
-                  </button>
+                  {isOwnProfile ? (
+                    <button className="rin-soft-button cursor-not-allowed px-3 py-2 text-sm opacity-50" disabled type="button" title={locale === "zh-CN" ? "不能私信自己" : "Cannot message yourself"}>
+                      <MessageCircle className="h-4 w-4" />
+                      {locale === "zh-CN" ? "私信" : "Message"}
+                    </button>
+                  ) : (
+                    <Link
+                      className="rin-soft-button inline-flex items-center gap-1.5 px-3 py-2 text-sm"
+                      href={`/messages?with=${encodeURIComponent(profile.username)}`}
+                    >
+                      <MessageCircle className="h-4 w-4" />
+                      {locale === "zh-CN" ? "私信" : "Message"}
+                    </Link>
+                  )}
                   <Link className="rin-soft-button px-3 py-2 text-sm" href={`/status?user=${profile.username}`}>
                     {locale === "zh-CN" ? "提交记录" : "Submissions"}
                   </Link>
@@ -60,7 +193,7 @@ export default function UserProfilePage() {
           </div>
         </section>
 
-        <section className="rin-card rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+        <section className="rin-card border border-slate-200/80 p-4">
           <div className="grid gap-3 sm:grid-cols-2">
             <ProfileMetric icon={<Trophy className="h-4 w-4" />} label={t("profile.rating")} value={profile.rating} />
             <ProfileMetric icon={<Award className="h-4 w-4" />} label={t("profile.solved")} value={profile.solved} />
@@ -69,32 +202,47 @@ export default function UserProfilePage() {
           </div>
         </section>
 
-        <section className="rin-card rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+        <section className="rin-card border border-slate-200/80 p-4">
           <div className="text-sm font-bold text-slate-500">{t("profile.badges")}</div>
           <div className="mt-3 flex flex-wrap gap-2">
             {profile.badges.map((badge) => (
-              <span key={badge} className="rounded-md border border-pink-100 bg-pink-50 px-2 py-1 text-xs font-bold text-pink-700">
+              <span key={badge} className="rin-chip">
                 {badge}
               </span>
             ))}
           </div>
         </section>
 
-        <section className="rin-card rounded-lg border border-slate-200 bg-white p-4 shadow-sm lg:col-span-2">
-          <MarkdownProfileBio username={profile.username} displayName={profile.displayName} locale={locale} />
+        <section className="rin-card border border-slate-200/80 p-4 lg:col-span-2">
+          <MarkdownProfileBio username={profile.username} displayName={profile.displayName} locale={locale} canEdit={isOwnProfile} />
         </section>
 
-        <section className="rin-card rounded-lg border border-slate-200 bg-white p-4 shadow-sm lg:col-span-2">
+        <section className="rin-card border border-slate-200/80 p-4 lg:col-span-2">
           <GitHubStyleHeatmap levels={profile.heatmap} locale={locale} lessLabel={t("profile.heatmapLess")} moreLabel={t("profile.heatmapMore")} />
         </section>
 
-        <section className="rin-card rounded-lg border border-slate-200 bg-white p-4 shadow-sm lg:col-span-2">
-          <div className="text-sm font-bold text-slate-500">{t("profile.recentSubmissions")}</div>
-          <div className="mt-3 grid gap-2 md:grid-cols-2">
+        <section className="rin-card overflow-hidden border border-slate-200/80 lg:col-span-2">
+          <div className="rin-card-head px-4 py-3.5">
+            <div className="flex items-center gap-2 text-sm font-bold text-slate-500">
+              <span className="rin-icon-tile rin-icon-tile--pink">
+                <Activity className="h-3.5 w-3.5" aria-hidden />
+              </span>
+              {t("profile.recentSubmissions")}
+            </div>
+          </div>
+          <div className="grid gap-2 p-4 md:grid-cols-2">
+            {recentJudgements.length === 0 ? (
+              <div className="rin-problem-section border-dashed border-slate-200/90 bg-slate-50/50 px-4 py-8 text-center text-sm font-medium text-slate-500 md:col-span-2">
+                {t("status.noResults")}
+              </div>
+            ) : null}
             {recentJudgements.map((judgement) => (
-              <div key={`${judgement.when}-${judgement.problem}`} className="grid grid-cols-[1fr_auto] items-center gap-2 rounded-lg bg-white/70 px-3 py-2">
+              <div
+                key={`${judgement.when}-${judgement.problem}`}
+                className="rin-problem-section grid grid-cols-[1fr_auto] items-center gap-2 border-slate-200/70 p-3 transition hover:border-pink-200/60 hover:shadow-[0_10px_28px_rgba(58,45,88,0.07)]"
+              >
                 <div>
-                  <Link className="text-sm font-bold text-sky-700 hover:text-pink-600" href={`/problems/${judgement.problem}`}>
+                  <Link className="rin-pill-problem text-xs font-black" href={`/problems/${judgement.problem}`}>
                     {judgement.problem}
                   </Link>
                   <div className="text-xs text-slate-500">
@@ -111,12 +259,116 @@ export default function UserProfilePage() {
   );
 }
 
-function MarkdownProfileBio({ username, displayName, locale }: Readonly<{ username: string; displayName: string; locale: string }>) {
+function createDefaultProfile(username: string) {
+  return {
+    username,
+    displayName: username,
+    title: "New Solver",
+    titleZh: "新晋刷题者",
+    rating: 1500,
+    solved: 0,
+    followers: 0,
+    streak: 0,
+    signature: "",
+    signatureZh: "",
+    badges: [],
+    heatmap: Array.from({ length: 28 }, () => 0),
+  };
+}
+
+function ProfileAvatar({
+  username,
+  isOwnProfile,
+  sessionAvatarUrl,
+  setSessionAvatarUrl,
+  locale,
+}: Readonly<{
+  username: string;
+  isOwnProfile: boolean;
+  sessionAvatarUrl: string;
+  setSessionAvatarUrl: (avatarUrl: string) => void;
+  locale: string;
+}>) {
+  const storageKey = `rin-profile-avatar:${username}`;
+  const [avatarUrl, setAvatarUrl] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const storedAvatar = window.localStorage.getItem(storageKey) ?? "";
+    const nextAvatar = isOwnProfile ? sessionAvatarUrl || storedAvatar : storedAvatar;
+    setAvatarUrl(nextAvatar);
+  }, [isOwnProfile, sessionAvatarUrl, storageKey]);
+
+  const saveAvatar = (nextAvatarUrl: string) => {
+    const trimmed = nextAvatarUrl.trim();
+    setAvatarUrl(trimmed);
+    window.localStorage.setItem(storageKey, trimmed);
+    if (isOwnProfile) {
+      setSessionAvatarUrl(trimmed);
+    }
+  };
+
+  const handleAvatarFile = (file: File | undefined) => {
+    if (!file) {
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.addEventListener("load", () => {
+      if (typeof reader.result === "string") {
+        saveAvatar(reader.result);
+      }
+    });
+    reader.readAsDataURL(file);
+  };
+
+  const changeAvatarLabel = locale === "zh-CN" ? "点击更换头像" : "Click to change avatar";
+
+  const avatarInner = (
+    <>
+      {avatarUrl ? <img className="h-full w-full rounded-xl object-cover" src={avatarUrl} alt={`${username} avatar`} /> : <RinMascot className="h-16 w-16" />}
+    </>
+  );
+
+  return (
+    <div className="grid gap-3">
+      <input
+        ref={fileInputRef}
+        aria-label={changeAvatarLabel}
+        className="sr-only"
+        accept="image/*"
+        type="file"
+        tabIndex={-1}
+        onChange={(event) => {
+          handleAvatarFile(event.target.files?.[0]);
+          event.target.value = "";
+        }}
+      />
+      {isOwnProfile ? (
+        <button
+          type="button"
+          className="rin-avatar-frame flex h-24 w-24 cursor-pointer items-center justify-center overflow-hidden rounded-2xl border border-white/90 bg-white/75 p-2 shadow-sm ring-pink-300/40 transition hover:border-pink-200/90 hover:shadow-md hover:ring-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-pink-400"
+          title={changeAvatarLabel}
+          aria-label={changeAvatarLabel}
+          onClick={() => fileInputRef.current?.click()}
+        >
+          {avatarInner}
+        </button>
+      ) : (
+        <div className="rin-avatar-frame flex h-24 w-24 items-center justify-center overflow-hidden rounded-2xl border border-white/90 bg-white/75 p-2">{avatarInner}</div>
+      )}
+    </div>
+  );
+}
+
+function MarkdownProfileBio({
+  username,
+  displayName,
+  locale,
+  canEdit,
+}: Readonly<{ username: string; displayName: string; locale: string; canEdit: boolean }>) {
   const storageKey = `rin-profile-bio:${username}`;
-  const defaultBio =
-    locale === "zh-CN"
-      ? `## 关于 ${displayName}\n喜欢刷题、写题解和研究评测系统。\n\n- 常用语言：\`C++17\` / \`Go\`\n- 最近目标：稳定 AC 图论和 DP\n- 推荐入门题：P1001\n- 公式也可以写：$O(n \\log n)$`
-      : `## About ${displayName}\nI enjoy problem solving, editorials, and judge systems.\n\n- Main languages: \`C++17\` / \`Go\`\n- Current goal: stable graph and DP practice\n- Starter problem: P1001\n- Inline math works: $O(n \\log n)$`;
+  const defaultBio = "";
   const [isEditing, setIsEditing] = useState(false);
   const [savedBio, setSavedBio] = useState(defaultBio);
   const [draftBio, setDraftBio] = useState(defaultBio);
@@ -133,42 +385,52 @@ function MarkdownProfileBio({ username, displayName, locale }: Readonly<{ userna
     setDraftBio(defaultBio);
   }, [defaultBio, storageKey]);
 
+  useEffect(() => {
+    if (!canEdit) {
+      setIsEditing(false);
+    }
+  }, [canEdit]);
+
   return (
     <div>
-      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <div className="flex items-center gap-2 text-sm font-bold text-slate-500">
-            <PencilLine className="h-4 w-4" />
+            <span className="rin-icon-tile rin-icon-tile--pink">
+              <PencilLine className="h-3.5 w-3.5" aria-hidden />
+            </span>
             {locale === "zh-CN" ? "个人简介" : "Profile Bio"}
           </div>
           <h2 className="mt-1 text-2xl font-black text-slate-950">{locale === "zh-CN" ? "Markdown 简介" : "Markdown Bio"}</h2>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <button
-            className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-black text-slate-700 shadow-sm hover:-translate-y-0.5 hover:bg-slate-50"
-            onClick={() => setIsEditing((value) => !value)}
-            type="button"
-          >
-            <Eye className="h-4 w-4" />
-            {isEditing ? (locale === "zh-CN" ? "只看预览" : "Preview only") : locale === "zh-CN" ? "编辑简介" : "Edit bio"}
-          </button>
-          <button
-            className="inline-flex items-center gap-2 rounded-lg bg-slate-950 px-3 py-2 text-sm font-black text-white shadow-sm hover:-translate-y-0.5 hover:bg-pink-600"
-            onClick={() => {
-              setSavedBio(draftBio);
-              window.localStorage.setItem(storageKey, draftBio);
-              setIsEditing(false);
-            }}
-            type="button"
-          >
-            <Save className="h-4 w-4" />
-            {locale === "zh-CN" ? "保存" : "Save"}
-          </button>
-        </div>
+        {canEdit ? (
+          <div className="flex flex-wrap gap-2">
+            <button
+              className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-black text-slate-700 shadow-sm hover:-translate-y-0.5 hover:bg-slate-50"
+              onClick={() => setIsEditing((value) => !value)}
+              type="button"
+            >
+              <Eye className="h-4 w-4" />
+              {isEditing ? (locale === "zh-CN" ? "只看预览" : "Preview only") : locale === "zh-CN" ? "编辑简介" : "Edit bio"}
+            </button>
+            <button
+              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-slate-900 to-slate-950 px-3 py-2 text-sm font-black text-white shadow-[0_4px_16px_rgba(15,10,30,0.22)] transition hover:-translate-y-0.5 hover:from-pink-600 hover:to-pink-700"
+              onClick={() => {
+                setSavedBio(draftBio);
+                window.localStorage.setItem(storageKey, draftBio);
+                setIsEditing(false);
+              }}
+              type="button"
+            >
+              <Save className="h-4 w-4" />
+              {locale === "zh-CN" ? "保存" : "Save"}
+            </button>
+          </div>
+        ) : null}
       </div>
 
-      <div className={`mt-4 grid gap-4 ${isEditing ? "xl:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]" : ""}`}>
-        {isEditing ? (
+      <div className={`mt-4 grid gap-4 ${canEdit && isEditing ? "xl:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]" : ""}`}>
+        {canEdit && isEditing ? (
           <label className="grid gap-2 text-sm font-black text-slate-700">
             Markdown
             <textarea
@@ -180,9 +442,21 @@ function MarkdownProfileBio({ username, displayName, locale }: Readonly<{ userna
           </label>
         ) : null}
 
-        <div className="min-h-[180px] rounded-xl border border-pink-100 bg-white/78 p-4">
+        <div className="rin-problem-section min-h-[180px] border-pink-100/50 p-4">
           <div className="mb-3 text-sm font-black text-slate-500">{locale === "zh-CN" ? "预览" : "Preview"}</div>
-          <div dangerouslySetInnerHTML={{ __html: previewHTML }} />
+          {savedBio.trim() ? (
+            <div dangerouslySetInnerHTML={{ __html: previewHTML }} />
+          ) : (
+            <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50/80 px-4 py-8 text-center text-sm font-semibold text-slate-500">
+              {canEdit
+                ? locale === "zh-CN"
+                  ? "还没有个人简介，点击“编辑简介”来写一点东西。"
+                  : "No bio yet. Click Edit bio to add one."
+                : locale === "zh-CN"
+                  ? "暂无简介。"
+                  : "No bio yet."}
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -191,29 +465,46 @@ function MarkdownProfileBio({ username, displayName, locale }: Readonly<{ userna
 
 function ProfileMetric({ icon, label, value }: Readonly<{ icon: ReactNode; label: string; value: string | number }>) {
   return (
-    <div className="rounded-lg border border-pink-100 bg-white/72 px-3 py-3">
-      <div className="flex items-center gap-2 text-xs font-bold text-slate-500">
-        {icon}
-        {label}
+    <div className="rounded-xl border border-pink-100/55 bg-gradient-to-b from-white/98 to-pink-50/35 px-3 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,1),0_6px_20px_rgba(58,45,88,0.05)] ring-1 ring-white/80 transition hover:-translate-y-px hover:shadow-[0_10px_28px_rgba(236,72,153,0.08)]">
+      <div className="flex items-start gap-2.5">
+        <span className="rin-icon-tile rin-icon-tile--sky mt-0.5 h-8 w-8 shrink-0 rounded-xl [&>svg]:h-3.5 [&>svg]:w-3.5">{icon}</span>
+        <div className="min-w-0 flex-1">
+          <div className="text-[11px] font-bold uppercase tracking-wide text-slate-500">{label}</div>
+          <div className="mt-1 text-xl font-black tabular-nums tracking-tight text-slate-950">{value}</div>
+        </div>
       </div>
-      <div className="mt-1 text-xl font-black text-slate-950">{value}</div>
     </div>
   );
+}
+
+/** Product timeline starts at 2026; no selector entries for earlier calendar years. */
+const HEATMAP_FIRST_YEAR = 2026;
+
+function heatmapSelectableYears(): number[] {
+  const now = new Date().getUTCFullYear();
+  if (now < HEATMAP_FIRST_YEAR) {
+    return [HEATMAP_FIRST_YEAR];
+  }
+  return Array.from({ length: now - HEATMAP_FIRST_YEAR + 1 }, (_, index) => HEATMAP_FIRST_YEAR + index);
 }
 
 function GitHubStyleHeatmap({ levels, locale, lessLabel, moreLabel }: Readonly<{ levels: number[]; locale: string; lessLabel: string; moreLabel: string }>) {
   const weeks = buildHeatmapWeeks(levels, locale);
   const monthLabels = heatmapMonthLabels(weeks, locale);
   const totalAC = weeks.flatMap((week) => week).reduce((sum, day) => sum + (day.inRange ? day.count : 0), 0);
-  const years = [2026, 2025, 2024, 2023, 2022];
+  const years = useMemo(() => heatmapSelectableYears(), []);
+  const [selectedYear, setSelectedYear] = useState(() => years[years.length - 1] ?? HEATMAP_FIRST_YEAR);
+  const showYearRail = years.length > 1;
 
   return (
-    <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_120px]">
+    <div className={`grid gap-4 ${showYearRail ? "xl:grid-cols-[minmax(0,1fr)_120px]" : ""}`}>
       <div>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <div className="flex items-center gap-2 text-sm font-bold text-slate-500">
-              <CalendarDays className="h-4 w-4" />
+              <span className="rin-icon-tile rin-icon-tile--emerald">
+                <CalendarDays className="h-3.5 w-3.5" aria-hidden />
+              </span>
               {locale === "zh-CN" ? "AC 热力图" : "AC Heatmap"}
             </div>
             <h2 className="mt-1 text-2xl font-black text-slate-950">{locale === "zh-CN" ? `过去一年 ${totalAC} 次 AC` : `${totalAC} accepted submissions in the last year`}</h2>
@@ -221,7 +512,7 @@ function GitHubStyleHeatmap({ levels, locale, lessLabel, moreLabel }: Readonly<{
           <div className="text-sm font-semibold text-slate-500">{heatmapDateRange(locale)}</div>
         </div>
 
-        <div className="mt-4 overflow-x-auto rounded-xl border border-slate-200 bg-white px-4 py-4">
+        <div className="rin-problem-section mt-4 overflow-x-auto px-4 py-4">
           <div className="min-w-[850px]">
             <div className="grid grid-cols-[48px_1fr]">
               <div />
@@ -272,13 +563,24 @@ function GitHubStyleHeatmap({ levels, locale, lessLabel, moreLabel }: Readonly<{
         </div>
       </div>
 
-      <div className="flex gap-2 overflow-x-auto xl:grid xl:content-start">
-        {years.map((year) => (
-          <button key={year} className={`rounded-lg px-4 py-3 text-left text-base font-semibold transition ${year === 2026 ? "bg-blue-600 text-white shadow-sm" : "text-slate-600 hover:bg-slate-100"}`} type="button">
-            {year}
-          </button>
-        ))}
-      </div>
+      {showYearRail ? (
+        <div className="flex gap-2 overflow-x-auto xl:grid xl:content-start">
+          {years.map((year) => (
+            <button
+              key={year}
+              className={`rounded-lg px-4 py-3 text-left text-base font-semibold transition ${
+                year === selectedYear
+                  ? "bg-gradient-to-b from-slate-900 to-slate-950 text-white shadow-[0_2px_10px_rgba(15,10,30,0.22),inset_0_1px_0_rgba(255,255,255,0.12)]"
+                  : "text-slate-600 hover:bg-slate-100"
+              }`}
+              type="button"
+              onClick={() => setSelectedYear(year)}
+            >
+              {year}
+            </button>
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -368,10 +670,16 @@ type HeatmapDay = {
   inRange: boolean;
 };
 
-const heatmapEndDate = new Date(Date.UTC(2026, 4, 3));
 const heatmapDayCount = 365;
 
+/** Rolling window ends on today's calendar date (UTC), so the range label never reads backwards across year boundaries. */
+function getHeatmapEndDate(): Date {
+  const n = new Date();
+  return new Date(Date.UTC(n.getUTCFullYear(), n.getUTCMonth(), n.getUTCDate()));
+}
+
 function buildHeatmapWeeks(levels: number[], locale: string): HeatmapDay[][] {
+  const heatmapEndDate = getHeatmapEndDate();
   const rangeStart = addUTCDate(heatmapEndDate, -(heatmapDayCount - 1));
   const gridStart = addUTCDate(rangeStart, -rangeStart.getUTCDay());
   const gridEnd = addUTCDate(heatmapEndDate, 6 - heatmapEndDate.getUTCDay());
@@ -402,8 +710,13 @@ function buildHeatmapWeeks(levels: number[], locale: string): HeatmapDay[][] {
 }
 
 function heatmapDateRange(locale: string) {
-  const startDate = addUTCDate(heatmapEndDate, -(heatmapDayCount - 1));
-  return `${formatHeatmapDate(startDate, locale)} - ${formatHeatmapDate(heatmapEndDate, locale)}`;
+  const endDate = getHeatmapEndDate();
+  const startDate = addUTCDate(endDate, -(heatmapDayCount - 1));
+  if (locale === "zh-CN") {
+    return `${startDate.getUTCFullYear()}年${startDate.getUTCMonth() + 1}月${startDate.getUTCDate()}日 – ${endDate.getUTCFullYear()}年${endDate.getUTCMonth() + 1}月${endDate.getUTCDate()}日`;
+  }
+  const opts: Intl.DateTimeFormatOptions = { year: "numeric", month: "short", day: "numeric", timeZone: "UTC" };
+  return `${new Intl.DateTimeFormat(locale, opts).format(startDate)} – ${new Intl.DateTimeFormat(locale, opts).format(endDate)}`;
 }
 
 function heatmapMonthLabels(weeks: HeatmapDay[][], locale: string) {
@@ -443,6 +756,7 @@ function weekdayLabels(locale: string) {
 
 function formatHeatmapDate(date: Date, locale: string) {
   return new Intl.DateTimeFormat(locale, {
+    year: "numeric",
     month: "short",
     day: "numeric",
     timeZone: "UTC",

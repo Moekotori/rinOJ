@@ -36,28 +36,30 @@ export default function ProblemsPage() {
   return (
     <OJShell>
       <div className="mx-auto grid w-full max-w-7xl gap-5 px-4 py-5 sm:px-6 lg:px-8">
-        <section className="rounded-lg border border-slate-200 bg-white shadow-sm">
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-4 py-3">
+        <section className="rin-card overflow-hidden border border-slate-200/80">
+          <div className="rin-card-head flex flex-wrap items-center justify-between gap-3 px-5 py-4">
             <div>
               <div className="flex items-center gap-2 text-sm font-semibold text-slate-500">
-                <BookOpen className="h-4 w-4" />
+                <span className="rin-icon-tile rin-icon-tile--sky">
+                  <BookOpen className="h-3.5 w-3.5" />
+                </span>
                 {t("problems.problemSet")}
               </div>
-              <h1 className="mt-1 text-2xl font-black text-slate-950">{t("problems.allProblems")}</h1>
+              <h1 className="mt-1 text-2xl font-black tracking-tight text-slate-950">{t("problems.allProblems")}</h1>
             </div>
             <div className="flex flex-wrap gap-2">
-              <label className="flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-600">
-                <Search className="h-4 w-4" />
+              <label className="rin-filter-field text-sm text-slate-600">
+                <Search className="h-3.5 w-3.5 shrink-0 text-slate-400" />
                 <input
-                  className="w-48 border-0 bg-transparent outline-none"
+                  className="w-44 placeholder:text-slate-400"
                   onChange={(event) => setQuery(event.target.value)}
                   placeholder={t("problems.searchPlaceholder")}
                   value={query}
                 />
               </label>
-              <label className="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700">
-                <Filter className="h-4 w-4" />
-                <select className="bg-transparent outline-none" onChange={(event) => setDifficulty(event.target.value)} value={difficulty}>
+              <label className="rin-filter-field text-sm font-semibold text-slate-700">
+                <Filter className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+                <select aria-label={t("problems.difficultyAll")} className="max-w-[10rem] cursor-pointer bg-transparent outline-none" onChange={(event) => setDifficulty(event.target.value)} value={difficulty}>
                   <option value="all">{t("problems.difficultyAll")}</option>
                   {difficulties.map((item) => (
                     <option key={item} value={item}>
@@ -66,8 +68,8 @@ export default function ProblemsPage() {
                   ))}
                 </select>
               </label>
-              <label className="inline-flex h-10 items-center rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700">
-                <select className="bg-transparent outline-none" onChange={(event) => setTag(event.target.value)} value={tag}>
+              <label className="rin-filter-field text-sm font-semibold text-slate-700">
+                <select aria-label={t("problems.tagAll")} className="max-w-[11rem] cursor-pointer bg-transparent outline-none" onChange={(event) => setTag(event.target.value)} value={tag}>
                   <option value="all">{t("problems.tagAll")}</option>
                   {tags.map((item) => (
                     <option key={item} value={item}>
@@ -79,17 +81,6 @@ export default function ProblemsPage() {
             </div>
           </div>
           <ProblemTable items={filteredProblems} />
-          <div className="flex items-center justify-between border-t border-slate-200 px-4 py-3 text-sm text-slate-600">
-            <span>{t("problems.showingSeed", { count: filteredProblems.length, total: problems.length })}</span>
-            <div className="flex gap-2">
-              <button className="rounded-lg border border-slate-200 bg-white px-3 py-2 font-semibold" type="button">
-                {t("problems.previous")}
-              </button>
-              <button className="rounded-lg border border-slate-200 bg-white px-3 py-2 font-semibold" type="button">
-                {t("problems.next")}
-              </button>
-            </div>
-          </div>
         </section>
       </div>
     </OJShell>

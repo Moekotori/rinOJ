@@ -1,6 +1,7 @@
 package objectstore
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -51,6 +52,23 @@ func (s *MinIOUploadSigner) PresignUploadPart(ctx context.Context, objectKey str
 			"x-rin-part-key":   partObjectKey,
 		},
 	}, nil
+}
+
+func (s *MinIOUploadSigner) PutText(ctx context.Context, objectKey string, content string) error {
+	if s.client == nil {
+		return errors.New("minio client is required")
+	}
+	if s.bucket == "" {
+		return errors.New("minio bucket is required")
+	}
+	reader := bytes.NewReader([]byte(content))
+	_, err := s.client.PutObject(ctx, s.bucket, objectKey, reader, int64(reader.Len()), minio.PutObjectOptions{
+		ContentType: "text/plain; charset=utf-8",
+	})
+	if err != nil {
+		return fmt.Errorf("put inline test object: %w", err)
+	}
+	return nil
 }
 
 func ValidateUploadExpiry(expires time.Duration) error {

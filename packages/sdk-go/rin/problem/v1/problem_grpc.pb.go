@@ -21,6 +21,7 @@ const _ = grpc.SupportPackageIsVersion9
 const (
 	ProblemService_CreateProblemDraft_FullMethodName     = "/rin.problem.v1.ProblemService/CreateProblemDraft"
 	ProblemService_ValidateProblemImport_FullMethodName  = "/rin.problem.v1.ProblemService/ValidateProblemImport"
+	ProblemService_CreateInlineDraft_FullMethodName      = "/rin.problem.v1.ProblemService/CreateInlineDraft"
 	ProblemService_TeacherQuickUpload_FullMethodName     = "/rin.problem.v1.ProblemService/TeacherQuickUpload"
 	ProblemService_StudentDraftSubmission_FullMethodName = "/rin.problem.v1.ProblemService/StudentDraftSubmission"
 	ProblemService_CreatePresignedUpload_FullMethodName  = "/rin.problem.v1.ProblemService/CreatePresignedUpload"
@@ -35,6 +36,7 @@ const (
 type ProblemServiceClient interface {
 	CreateProblemDraft(ctx context.Context, in *CreateProblemDraftRequest, opts ...grpc.CallOption) (*ProblemDraft, error)
 	ValidateProblemImport(ctx context.Context, in *ValidateProblemImportRequest, opts ...grpc.CallOption) (*ImportWizard, error)
+	CreateInlineDraft(ctx context.Context, in *CreateInlineDraftRequest, opts ...grpc.CallOption) (*CreateInlineDraftResponse, error)
 	TeacherQuickUpload(ctx context.Context, in *TeacherQuickUploadRequest, opts ...grpc.CallOption) (*ProblemDraft, error)
 	StudentDraftSubmission(ctx context.Context, in *StudentDraftSubmissionRequest, opts ...grpc.CallOption) (*ProblemDraft, error)
 	CreatePresignedUpload(ctx context.Context, in *CreatePresignedUploadRequest, opts ...grpc.CallOption) (*CreatePresignedUploadResponse, error)
@@ -65,6 +67,16 @@ func (c *problemServiceClient) ValidateProblemImport(ctx context.Context, in *Va
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ImportWizard)
 	err := c.cc.Invoke(ctx, ProblemService_ValidateProblemImport_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *problemServiceClient) CreateInlineDraft(ctx context.Context, in *CreateInlineDraftRequest, opts ...grpc.CallOption) (*CreateInlineDraftResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CreateInlineDraftResponse)
+	err := c.cc.Invoke(ctx, ProblemService_CreateInlineDraft_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -137,6 +149,7 @@ func (c *problemServiceClient) ListProblems(ctx context.Context, in *ListProblem
 type ProblemServiceServer interface {
 	CreateProblemDraft(context.Context, *CreateProblemDraftRequest) (*ProblemDraft, error)
 	ValidateProblemImport(context.Context, *ValidateProblemImportRequest) (*ImportWizard, error)
+	CreateInlineDraft(context.Context, *CreateInlineDraftRequest) (*CreateInlineDraftResponse, error)
 	TeacherQuickUpload(context.Context, *TeacherQuickUploadRequest) (*ProblemDraft, error)
 	StudentDraftSubmission(context.Context, *StudentDraftSubmissionRequest) (*ProblemDraft, error)
 	CreatePresignedUpload(context.Context, *CreatePresignedUploadRequest) (*CreatePresignedUploadResponse, error)
@@ -158,6 +171,9 @@ func (UnimplementedProblemServiceServer) CreateProblemDraft(context.Context, *Cr
 }
 func (UnimplementedProblemServiceServer) ValidateProblemImport(context.Context, *ValidateProblemImportRequest) (*ImportWizard, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ValidateProblemImport not implemented")
+}
+func (UnimplementedProblemServiceServer) CreateInlineDraft(context.Context, *CreateInlineDraftRequest) (*CreateInlineDraftResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateInlineDraft not implemented")
 }
 func (UnimplementedProblemServiceServer) TeacherQuickUpload(context.Context, *TeacherQuickUploadRequest) (*ProblemDraft, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method TeacherQuickUpload not implemented")
@@ -230,6 +246,24 @@ func _ProblemService_ValidateProblemImport_Handler(srv interface{}, ctx context.
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ProblemServiceServer).ValidateProblemImport(ctx, req.(*ValidateProblemImportRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ProblemService_CreateInlineDraft_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateInlineDraftRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProblemServiceServer).CreateInlineDraft(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ProblemService_CreateInlineDraft_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProblemServiceServer).CreateInlineDraft(ctx, req.(*CreateInlineDraftRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -356,6 +390,10 @@ var ProblemService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ValidateProblemImport",
 			Handler:    _ProblemService_ValidateProblemImport_Handler,
+		},
+		{
+			MethodName: "CreateInlineDraft",
+			Handler:    _ProblemService_CreateInlineDraft_Handler,
 		},
 		{
 			MethodName: "TeacherQuickUpload",

@@ -123,11 +123,66 @@ func TestValidateProblemImportRoute(t *testing.T) {
 	}
 }
 
+func TestValidateProblemImportRouteForwardsFlatMetadata(t *testing.T) {
+	fake := &fakeProblemClient{}
+	server := New(ServerConfig{
+		ServiceName:   "gateway",
+		Version:       "test",
+		ProblemClient: fake,
+	})
+
+	body := bytes.NewBufferString(`{"uploadObjectKey":"problem-intake/usr_teacher/flat.zip","sourceFilename":"flat.zip","flatMetadata":{"title":"A + B","timeLimit":2000,"memoryLimit":512,"judgeType":"special_judge"}}`)
+	req := httptest.NewRequest(http.MethodPost, "/v1/problem-intake/imports:validate", body)
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Rin-Actor-ID", "usr_teacher")
+	rec := httptest.NewRecorder()
+
+	server.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", rec.Code, rec.Body.String())
+	}
+	if fake.lastValidate.GetFlatMetadata().GetTitle() != "A + B" {
+		t.Fatalf("flat metadata was not forwarded: %#v", fake.lastValidate.GetFlatMetadata())
+	}
+	if fake.lastValidate.GetFlatMetadata().GetTimeLimit() != 2000 {
+		t.Fatalf("unexpected flat time limit %d", fake.lastValidate.GetFlatMetadata().GetTimeLimit())
+	}
+}
+
+func TestCreateInlineDraftRoute(t *testing.T) {
+	fake := &fakeProblemClient{}
+	server := New(ServerConfig{
+		ServiceName:   "gateway",
+		Version:       "test",
+		ProblemClient: fake,
+	})
+
+	body := bytes.NewBufferString(`{"title":"A + B","timeLimit":1000,"memoryLimit":256,"judgeType":"traditional","locale":"zh-CN","statement":"# A + B\n","samples":[{"input":"1 2\n","output":"3\n"}],"testCases":[{"inputText":"1 2\n","outputObjectKey":"problem-intake/out"}],"classId":"class_1","noteToReviewer":"please review"}`)
+	req := httptest.NewRequest(http.MethodPost, "/v1/problem-intake/inline-draft", body)
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Rin-Actor-ID", "usr_student")
+	rec := httptest.NewRecorder()
+
+	server.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("expected 201, got %d: %s", rec.Code, rec.Body.String())
+	}
+	if fake.lastInline.GetActorId() != "usr_student" {
+		t.Fatalf("actor id should come from request header, got %q", fake.lastInline.GetActorId())
+	}
+	if fake.lastInline.GetTitle() != "A + B" || len(fake.lastInline.GetTestCases()) != 1 {
+		t.Fatalf("unexpected inline request %#v", fake.lastInline)
+	}
+}
+
 type fakeProblemClient struct {
 	lastUpload   *problemv1.CreatePresignedUploadRequest
 	lastTeacher  *problemv1.TeacherQuickUploadRequest
 	lastStudent  *problemv1.StudentDraftSubmissionRequest
 	lastValidate *problemv1.ValidateProblemImportRequest
+	lastInline   *problemv1.CreateInlineDraftRequest
 }
 
 func (f *fakeProblemClient) CreatePresignedUpload(ctx context.Context, req *problemv1.CreatePresignedUploadRequest) (*problemv1.CreatePresignedUploadResponse, error) {
@@ -171,5 +226,14 @@ func (f *fakeProblemClient) ValidateProblemImport(ctx context.Context, req *prob
 			{Code: "package.parser.pending", Severity: "warning", Message: "parser pending"},
 		},
 		NextActions: []string{"preview_statement"},
+	}, nil
+}
+
+func (f *fakeProblemClient) CreateInlineDraft(ctx context.Context, req *problemv1.CreateInlineDraftRequest) (*problemv1.CreateInlineDraftResponse, error) {
+	f.lastInline = req
+	return &problemv1.CreateInlineDraftResponse{
+		DraftId:    "draft_inline",
+		ProblemId:  "prob_inline",
+		Visibility: "private",
 	}, nil
 }

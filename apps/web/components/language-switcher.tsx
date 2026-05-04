@@ -9,11 +9,18 @@ export function LanguageSwitcher() {
   const { locale, setLocale } = useLocaleStore();
 
   return (
-    <div className="inline-flex rounded-lg border border-slate-200 bg-white p-1" aria-label="Language">
+    <div
+      className="inline-flex rounded-md border border-slate-200 bg-slate-50 p-0.5"
+      aria-label="Language"
+    >
       {locales.map((item) => (
         <button
           key={item}
-          className={`rounded-md px-2 py-1 text-xs font-bold ${locale === item ? "bg-slate-950 text-white" : "text-slate-600 hover:bg-slate-100"}`}
+          className={`rounded px-2.5 py-1.5 text-[11px] font-bold tracking-wide transition duration-150 ${
+            locale === item
+              ? "bg-slate-900 text-white shadow-sm"
+              : "text-slate-500 hover:bg-white/95 hover:text-slate-800"
+          }`}
           onClick={() => setLocale(item)}
           type="button"
         >

@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"errors"
+	"strings"
 	"sync"
 )
 
@@ -27,12 +28,13 @@ func (r *MemoryRepository) CreateUser(_ context.Context, user UserRecord) error 
 	if _, exists := r.usersByMail[user.Email]; exists {
 		return ErrEmailAlreadyRegistered
 	}
-	if _, exists := r.usersByName[user.Username]; exists {
+	normalizedUsername := strings.ToLower(user.Username)
+	if _, exists := r.usersByName[normalizedUsername]; exists {
 		return ErrUsernameAlreadyRegistered
 	}
 	r.usersByID[user.UserID] = user
 	r.usersByMail[user.Email] = user.UserID
-	r.usersByName[user.Username] = user.UserID
+	r.usersByName[normalizedUsername] = user.UserID
 	return nil
 }
 
@@ -49,6 +51,7 @@ func (r *MemoryRepository) GetUser(_ context.Context, userID string) (UserRecord
 func (r *MemoryRepository) GetUserByLogin(_ context.Context, login string) (UserRecord, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
+	login = strings.ToLower(strings.TrimSpace(login))
 	userID, ok := r.usersByMail[login]
 	if !ok {
 		userID, ok = r.usersByName[login]
@@ -57,4 +60,17 @@ func (r *MemoryRepository) GetUserByLogin(_ context.Context, login string) (User
 		return UserRecord{}, errors.New("user not found")
 	}
 	return r.usersByID[userID], nil
+}
+
+// UpdateUserRole updates the stored role (e.g. tests or future admin tooling).
+func (r *MemoryRepository) UpdateUserRole(_ context.Context, userID, role string) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	user, ok := r.usersByID[userID]
+	if !ok {
+		return errors.New("user not found")
+	}
+	user.Role = role
+	r.usersByID[userID] = user
+	return nil
 }

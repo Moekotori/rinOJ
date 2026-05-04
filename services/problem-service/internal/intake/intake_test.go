@@ -175,6 +175,93 @@ func TestValidateProblemImportBuildsFriendlyWizardFromUpload(t *testing.T) {
 	assertHasValidation(t, wizard, "package.parser.pending")
 }
 
+func TestCreateInlineDraftRequiresTitleAndStatement(t *testing.T) {
+	service := NewService()
+
+	_, err := service.CreateInlineDraft(InlineDraftInput{
+		ActorID:   "usr_student",
+		Statement: "# Missing title\n",
+	})
+	if err == nil || !strings.Contains(err.Error(), "title") {
+		t.Fatalf("expected title error, got %v", err)
+	}
+
+	_, err = service.CreateInlineDraft(InlineDraftInput{
+		ActorID: "usr_student",
+		Title:   "Missing statement",
+	})
+	if err == nil || !strings.Contains(err.Error(), "statement") {
+		t.Fatalf("expected statement error, got %v", err)
+	}
+}
+
+func TestCreateInlineDraftFillsDefaultsAndWritesTextTests(t *testing.T) {
+	writer := &recordingTextWriter{}
+	service := NewService(WithTextObjectWriter(writer), WithIDGenerator(StaticIDGenerator{Value: "fixed"}))
+
+	draft, err := service.CreateInlineDraft(InlineDraftInput{
+		ActorID:   "usr_student",
+		Title:     "A + B",
+		Statement: "# A + B\n",
+		Samples: []SampleCase{
+			{Name: "sample-1", Input: "1 2\n", Output: "3\n"},
+		},
+		TestCases: []InlineTestCase{
+			{InputText: "1 2\n", OutputText: "3\n"},
+		},
+	})
+	if err != nil {
+		t.Fatalf("CreateInlineDraft returned error: %v", err)
+	}
+	if draft.DraftID != "draft_fixed" || draft.ProblemID != "prob_fixed" {
+		t.Fatalf("unexpected ids %#v", draft)
+	}
+	if draft.Visibility != VisibilityPrivate {
+		t.Fatalf("inline drafts should be private, got %s", draft.Visibility)
+	}
+	if !draft.Wizard.Valid() {
+		t.Fatalf("inline draft should validate, got %#v", draft.Wizard.Validations)
+	}
+	if draft.Wizard.Statements["zh-CN"] != "# A + B\n" {
+		t.Fatalf("expected default zh-CN statement, got %#v", draft.Wizard.Statements)
+	}
+	if len(writer.objects) != 2 {
+		t.Fatalf("expected two text objects, got %#v", writer.objects)
+	}
+}
+
+func TestCreateInlineDraftAcceptsObjectStorageTests(t *testing.T) {
+	service := NewService(WithIDGenerator(StaticIDGenerator{Value: "fixed"}))
+
+	draft, err := service.CreateInlineDraft(InlineDraftInput{
+		ActorID:     "usr_teacher",
+		Title:       "Large Data",
+		TimeLimit:   2000,
+		MemoryLimit: 512,
+		JudgeType:   ProblemTypeInteractive,
+		Locale:      "en-US",
+		Statement:   "# Large Data\n",
+		Samples: []SampleCase{
+			{Name: "sample-1", Input: "1\n", Output: "1\n"},
+		},
+		TestCases: []InlineTestCase{
+			{InputObjectKey: "problem-intake/usr_teacher/001.in", OutputObjectKey: "problem-intake/usr_teacher/001.out"},
+		},
+	})
+	if err != nil {
+		t.Fatalf("CreateInlineDraft returned error: %v", err)
+	}
+	if draft.Wizard.DetectedType != ProblemTypeInteractive {
+		t.Fatalf("unexpected type %s", draft.Wizard.DetectedType)
+	}
+	if _, ok := draft.Wizard.Statements["en-US"]; !ok {
+		t.Fatalf("expected en-US statement, got %#v", draft.Wizard.Statements)
+	}
+	if !draft.Wizard.Valid() {
+		t.Fatalf("object-storage test draft should validate, got %#v", draft.Wizard.Validations)
+	}
+}
+
 type recordingSigner struct {
 	calls int
 }
@@ -188,6 +275,18 @@ func (s *recordingSigner) PresignUploadPart(ctx context.Context, objectKey strin
 			"x-rin-part": string(rune('0' + partNumber)),
 		},
 	}, nil
+}
+
+type recordingTextWriter struct {
+	objects map[string]string
+}
+
+func (w *recordingTextWriter) PutText(ctx context.Context, objectKey string, content string) error {
+	if w.objects == nil {
+		w.objects = make(map[string]string)
+	}
+	w.objects[objectKey] = content
+	return nil
 }
 
 func assertHasValidation(t *testing.T, wizard ImportWizard, code string) {

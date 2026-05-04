@@ -462,6 +462,7 @@ type ValidateProblemImportRequest struct {
 	ActorId         string                 `protobuf:"bytes,1,opt,name=actor_id,json=actorId,proto3" json:"actor_id,omitempty"`
 	UploadObjectKey string                 `protobuf:"bytes,2,opt,name=upload_object_key,json=uploadObjectKey,proto3" json:"upload_object_key,omitempty"`
 	SourceFilename  string                 `protobuf:"bytes,3,opt,name=source_filename,json=sourceFilename,proto3" json:"source_filename,omitempty"`
+	FlatMetadata    *FlatZIPMetadata       `protobuf:"bytes,4,opt,name=flat_metadata,json=flatMetadata,proto3,oneof" json:"flat_metadata,omitempty"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
@@ -517,6 +518,385 @@ func (x *ValidateProblemImportRequest) GetSourceFilename() string {
 	return ""
 }
 
+func (x *ValidateProblemImportRequest) GetFlatMetadata() *FlatZIPMetadata {
+	if x != nil {
+		return x.FlatMetadata
+	}
+	return nil
+}
+
+type FlatZIPMetadata struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Title         string                 `protobuf:"bytes,1,opt,name=title,proto3" json:"title,omitempty"`
+	TimeLimit     int32                  `protobuf:"varint,2,opt,name=time_limit,json=timeLimit,proto3" json:"time_limit,omitempty"`
+	MemoryLimit   int32                  `protobuf:"varint,3,opt,name=memory_limit,json=memoryLimit,proto3" json:"memory_limit,omitempty"`
+	JudgeType     string                 `protobuf:"bytes,4,opt,name=judge_type,json=judgeType,proto3" json:"judge_type,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *FlatZIPMetadata) Reset() {
+	*x = FlatZIPMetadata{}
+	mi := &file_rin_problem_v1_problem_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FlatZIPMetadata) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FlatZIPMetadata) ProtoMessage() {}
+
+func (x *FlatZIPMetadata) ProtoReflect() protoreflect.Message {
+	mi := &file_rin_problem_v1_problem_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FlatZIPMetadata.ProtoReflect.Descriptor instead.
+func (*FlatZIPMetadata) Descriptor() ([]byte, []int) {
+	return file_rin_problem_v1_problem_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *FlatZIPMetadata) GetTitle() string {
+	if x != nil {
+		return x.Title
+	}
+	return ""
+}
+
+func (x *FlatZIPMetadata) GetTimeLimit() int32 {
+	if x != nil {
+		return x.TimeLimit
+	}
+	return 0
+}
+
+func (x *FlatZIPMetadata) GetMemoryLimit() int32 {
+	if x != nil {
+		return x.MemoryLimit
+	}
+	return 0
+}
+
+func (x *FlatZIPMetadata) GetJudgeType() string {
+	if x != nil {
+		return x.JudgeType
+	}
+	return ""
+}
+
+type InlineSample struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Input         string                 `protobuf:"bytes,1,opt,name=input,proto3" json:"input,omitempty"`
+	Output        string                 `protobuf:"bytes,2,opt,name=output,proto3" json:"output,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *InlineSample) Reset() {
+	*x = InlineSample{}
+	mi := &file_rin_problem_v1_problem_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *InlineSample) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*InlineSample) ProtoMessage() {}
+
+func (x *InlineSample) ProtoReflect() protoreflect.Message {
+	mi := &file_rin_problem_v1_problem_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use InlineSample.ProtoReflect.Descriptor instead.
+func (*InlineSample) Descriptor() ([]byte, []int) {
+	return file_rin_problem_v1_problem_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *InlineSample) GetInput() string {
+	if x != nil {
+		return x.Input
+	}
+	return ""
+}
+
+func (x *InlineSample) GetOutput() string {
+	if x != nil {
+		return x.Output
+	}
+	return ""
+}
+
+type InlineTestCase struct {
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	InputText       string                 `protobuf:"bytes,1,opt,name=input_text,json=inputText,proto3" json:"input_text,omitempty"`
+	OutputText      string                 `protobuf:"bytes,2,opt,name=output_text,json=outputText,proto3" json:"output_text,omitempty"`
+	InputObjectKey  string                 `protobuf:"bytes,3,opt,name=input_object_key,json=inputObjectKey,proto3" json:"input_object_key,omitempty"`
+	OutputObjectKey string                 `protobuf:"bytes,4,opt,name=output_object_key,json=outputObjectKey,proto3" json:"output_object_key,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *InlineTestCase) Reset() {
+	*x = InlineTestCase{}
+	mi := &file_rin_problem_v1_problem_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *InlineTestCase) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*InlineTestCase) ProtoMessage() {}
+
+func (x *InlineTestCase) ProtoReflect() protoreflect.Message {
+	mi := &file_rin_problem_v1_problem_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use InlineTestCase.ProtoReflect.Descriptor instead.
+func (*InlineTestCase) Descriptor() ([]byte, []int) {
+	return file_rin_problem_v1_problem_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *InlineTestCase) GetInputText() string {
+	if x != nil {
+		return x.InputText
+	}
+	return ""
+}
+
+func (x *InlineTestCase) GetOutputText() string {
+	if x != nil {
+		return x.OutputText
+	}
+	return ""
+}
+
+func (x *InlineTestCase) GetInputObjectKey() string {
+	if x != nil {
+		return x.InputObjectKey
+	}
+	return ""
+}
+
+func (x *InlineTestCase) GetOutputObjectKey() string {
+	if x != nil {
+		return x.OutputObjectKey
+	}
+	return ""
+}
+
+type CreateInlineDraftRequest struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	ActorId        string                 `protobuf:"bytes,1,opt,name=actor_id,json=actorId,proto3" json:"actor_id,omitempty"`
+	Title          string                 `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
+	TimeLimit      int32                  `protobuf:"varint,3,opt,name=time_limit,json=timeLimit,proto3" json:"time_limit,omitempty"`
+	MemoryLimit    int32                  `protobuf:"varint,4,opt,name=memory_limit,json=memoryLimit,proto3" json:"memory_limit,omitempty"`
+	JudgeType      string                 `protobuf:"bytes,5,opt,name=judge_type,json=judgeType,proto3" json:"judge_type,omitempty"`
+	Locale         string                 `protobuf:"bytes,6,opt,name=locale,proto3" json:"locale,omitempty"`
+	Statement      string                 `protobuf:"bytes,7,opt,name=statement,proto3" json:"statement,omitempty"`
+	Samples        []*InlineSample        `protobuf:"bytes,8,rep,name=samples,proto3" json:"samples,omitempty"`
+	TestCases      []*InlineTestCase      `protobuf:"bytes,9,rep,name=test_cases,json=testCases,proto3" json:"test_cases,omitempty"`
+	ClassId        string                 `protobuf:"bytes,10,opt,name=class_id,json=classId,proto3" json:"class_id,omitempty"`
+	NoteToReviewer string                 `protobuf:"bytes,11,opt,name=note_to_reviewer,json=noteToReviewer,proto3" json:"note_to_reviewer,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *CreateInlineDraftRequest) Reset() {
+	*x = CreateInlineDraftRequest{}
+	mi := &file_rin_problem_v1_problem_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateInlineDraftRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateInlineDraftRequest) ProtoMessage() {}
+
+func (x *CreateInlineDraftRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_rin_problem_v1_problem_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateInlineDraftRequest.ProtoReflect.Descriptor instead.
+func (*CreateInlineDraftRequest) Descriptor() ([]byte, []int) {
+	return file_rin_problem_v1_problem_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *CreateInlineDraftRequest) GetActorId() string {
+	if x != nil {
+		return x.ActorId
+	}
+	return ""
+}
+
+func (x *CreateInlineDraftRequest) GetTitle() string {
+	if x != nil {
+		return x.Title
+	}
+	return ""
+}
+
+func (x *CreateInlineDraftRequest) GetTimeLimit() int32 {
+	if x != nil {
+		return x.TimeLimit
+	}
+	return 0
+}
+
+func (x *CreateInlineDraftRequest) GetMemoryLimit() int32 {
+	if x != nil {
+		return x.MemoryLimit
+	}
+	return 0
+}
+
+func (x *CreateInlineDraftRequest) GetJudgeType() string {
+	if x != nil {
+		return x.JudgeType
+	}
+	return ""
+}
+
+func (x *CreateInlineDraftRequest) GetLocale() string {
+	if x != nil {
+		return x.Locale
+	}
+	return ""
+}
+
+func (x *CreateInlineDraftRequest) GetStatement() string {
+	if x != nil {
+		return x.Statement
+	}
+	return ""
+}
+
+func (x *CreateInlineDraftRequest) GetSamples() []*InlineSample {
+	if x != nil {
+		return x.Samples
+	}
+	return nil
+}
+
+func (x *CreateInlineDraftRequest) GetTestCases() []*InlineTestCase {
+	if x != nil {
+		return x.TestCases
+	}
+	return nil
+}
+
+func (x *CreateInlineDraftRequest) GetClassId() string {
+	if x != nil {
+		return x.ClassId
+	}
+	return ""
+}
+
+func (x *CreateInlineDraftRequest) GetNoteToReviewer() string {
+	if x != nil {
+		return x.NoteToReviewer
+	}
+	return ""
+}
+
+type CreateInlineDraftResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	DraftId       string                 `protobuf:"bytes,1,opt,name=draft_id,json=draftId,proto3" json:"draft_id,omitempty"`
+	ProblemId     string                 `protobuf:"bytes,2,opt,name=problem_id,json=problemId,proto3" json:"problem_id,omitempty"`
+	Visibility    string                 `protobuf:"bytes,3,opt,name=visibility,proto3" json:"visibility,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreateInlineDraftResponse) Reset() {
+	*x = CreateInlineDraftResponse{}
+	mi := &file_rin_problem_v1_problem_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateInlineDraftResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateInlineDraftResponse) ProtoMessage() {}
+
+func (x *CreateInlineDraftResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_rin_problem_v1_problem_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateInlineDraftResponse.ProtoReflect.Descriptor instead.
+func (*CreateInlineDraftResponse) Descriptor() ([]byte, []int) {
+	return file_rin_problem_v1_problem_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *CreateInlineDraftResponse) GetDraftId() string {
+	if x != nil {
+		return x.DraftId
+	}
+	return ""
+}
+
+func (x *CreateInlineDraftResponse) GetProblemId() string {
+	if x != nil {
+		return x.ProblemId
+	}
+	return ""
+}
+
+func (x *CreateInlineDraftResponse) GetVisibility() string {
+	if x != nil {
+		return x.Visibility
+	}
+	return ""
+}
+
 type TeacherQuickUploadRequest struct {
 	state              protoimpl.MessageState `protogen:"open.v1"`
 	TeacherId          string                 `protobuf:"bytes,1,opt,name=teacher_id,json=teacherId,proto3" json:"teacher_id,omitempty"`
@@ -530,7 +910,7 @@ type TeacherQuickUploadRequest struct {
 
 func (x *TeacherQuickUploadRequest) Reset() {
 	*x = TeacherQuickUploadRequest{}
-	mi := &file_rin_problem_v1_problem_proto_msgTypes[5]
+	mi := &file_rin_problem_v1_problem_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -542,7 +922,7 @@ func (x *TeacherQuickUploadRequest) String() string {
 func (*TeacherQuickUploadRequest) ProtoMessage() {}
 
 func (x *TeacherQuickUploadRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_rin_problem_v1_problem_proto_msgTypes[5]
+	mi := &file_rin_problem_v1_problem_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -555,7 +935,7 @@ func (x *TeacherQuickUploadRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TeacherQuickUploadRequest.ProtoReflect.Descriptor instead.
 func (*TeacherQuickUploadRequest) Descriptor() ([]byte, []int) {
-	return file_rin_problem_v1_problem_proto_rawDescGZIP(), []int{5}
+	return file_rin_problem_v1_problem_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *TeacherQuickUploadRequest) GetTeacherId() string {
@@ -605,7 +985,7 @@ type StudentDraftSubmissionRequest struct {
 
 func (x *StudentDraftSubmissionRequest) Reset() {
 	*x = StudentDraftSubmissionRequest{}
-	mi := &file_rin_problem_v1_problem_proto_msgTypes[6]
+	mi := &file_rin_problem_v1_problem_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -617,7 +997,7 @@ func (x *StudentDraftSubmissionRequest) String() string {
 func (*StudentDraftSubmissionRequest) ProtoMessage() {}
 
 func (x *StudentDraftSubmissionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_rin_problem_v1_problem_proto_msgTypes[6]
+	mi := &file_rin_problem_v1_problem_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -630,7 +1010,7 @@ func (x *StudentDraftSubmissionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StudentDraftSubmissionRequest.ProtoReflect.Descriptor instead.
 func (*StudentDraftSubmissionRequest) Descriptor() ([]byte, []int) {
-	return file_rin_problem_v1_problem_proto_rawDescGZIP(), []int{6}
+	return file_rin_problem_v1_problem_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *StudentDraftSubmissionRequest) GetStudentId() string {
@@ -676,7 +1056,7 @@ type ImportWizard struct {
 
 func (x *ImportWizard) Reset() {
 	*x = ImportWizard{}
-	mi := &file_rin_problem_v1_problem_proto_msgTypes[7]
+	mi := &file_rin_problem_v1_problem_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -688,7 +1068,7 @@ func (x *ImportWizard) String() string {
 func (*ImportWizard) ProtoMessage() {}
 
 func (x *ImportWizard) ProtoReflect() protoreflect.Message {
-	mi := &file_rin_problem_v1_problem_proto_msgTypes[7]
+	mi := &file_rin_problem_v1_problem_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -701,7 +1081,7 @@ func (x *ImportWizard) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ImportWizard.ProtoReflect.Descriptor instead.
 func (*ImportWizard) Descriptor() ([]byte, []int) {
-	return file_rin_problem_v1_problem_proto_rawDescGZIP(), []int{7}
+	return file_rin_problem_v1_problem_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *ImportWizard) GetImportId() string {
@@ -764,7 +1144,7 @@ type SampleCase struct {
 
 func (x *SampleCase) Reset() {
 	*x = SampleCase{}
-	mi := &file_rin_problem_v1_problem_proto_msgTypes[8]
+	mi := &file_rin_problem_v1_problem_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -776,7 +1156,7 @@ func (x *SampleCase) String() string {
 func (*SampleCase) ProtoMessage() {}
 
 func (x *SampleCase) ProtoReflect() protoreflect.Message {
-	mi := &file_rin_problem_v1_problem_proto_msgTypes[8]
+	mi := &file_rin_problem_v1_problem_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -789,7 +1169,7 @@ func (x *SampleCase) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SampleCase.ProtoReflect.Descriptor instead.
 func (*SampleCase) Descriptor() ([]byte, []int) {
-	return file_rin_problem_v1_problem_proto_rawDescGZIP(), []int{8}
+	return file_rin_problem_v1_problem_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *SampleCase) GetName() string {
@@ -825,7 +1205,7 @@ type ImportValidation struct {
 
 func (x *ImportValidation) Reset() {
 	*x = ImportValidation{}
-	mi := &file_rin_problem_v1_problem_proto_msgTypes[9]
+	mi := &file_rin_problem_v1_problem_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -837,7 +1217,7 @@ func (x *ImportValidation) String() string {
 func (*ImportValidation) ProtoMessage() {}
 
 func (x *ImportValidation) ProtoReflect() protoreflect.Message {
-	mi := &file_rin_problem_v1_problem_proto_msgTypes[9]
+	mi := &file_rin_problem_v1_problem_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -850,7 +1230,7 @@ func (x *ImportValidation) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ImportValidation.ProtoReflect.Descriptor instead.
 func (*ImportValidation) Descriptor() ([]byte, []int) {
-	return file_rin_problem_v1_problem_proto_rawDescGZIP(), []int{9}
+	return file_rin_problem_v1_problem_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *ImportValidation) GetCode() string {
@@ -894,7 +1274,7 @@ type CreatePresignedUploadRequest struct {
 
 func (x *CreatePresignedUploadRequest) Reset() {
 	*x = CreatePresignedUploadRequest{}
-	mi := &file_rin_problem_v1_problem_proto_msgTypes[10]
+	mi := &file_rin_problem_v1_problem_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -906,7 +1286,7 @@ func (x *CreatePresignedUploadRequest) String() string {
 func (*CreatePresignedUploadRequest) ProtoMessage() {}
 
 func (x *CreatePresignedUploadRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_rin_problem_v1_problem_proto_msgTypes[10]
+	mi := &file_rin_problem_v1_problem_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -919,7 +1299,7 @@ func (x *CreatePresignedUploadRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreatePresignedUploadRequest.ProtoReflect.Descriptor instead.
 func (*CreatePresignedUploadRequest) Descriptor() ([]byte, []int) {
-	return file_rin_problem_v1_problem_proto_rawDescGZIP(), []int{10}
+	return file_rin_problem_v1_problem_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *CreatePresignedUploadRequest) GetActorId() string {
@@ -968,7 +1348,7 @@ type CreatePresignedUploadResponse struct {
 
 func (x *CreatePresignedUploadResponse) Reset() {
 	*x = CreatePresignedUploadResponse{}
-	mi := &file_rin_problem_v1_problem_proto_msgTypes[11]
+	mi := &file_rin_problem_v1_problem_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -980,7 +1360,7 @@ func (x *CreatePresignedUploadResponse) String() string {
 func (*CreatePresignedUploadResponse) ProtoMessage() {}
 
 func (x *CreatePresignedUploadResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_rin_problem_v1_problem_proto_msgTypes[11]
+	mi := &file_rin_problem_v1_problem_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -993,7 +1373,7 @@ func (x *CreatePresignedUploadResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreatePresignedUploadResponse.ProtoReflect.Descriptor instead.
 func (*CreatePresignedUploadResponse) Descriptor() ([]byte, []int) {
-	return file_rin_problem_v1_problem_proto_rawDescGZIP(), []int{11}
+	return file_rin_problem_v1_problem_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *CreatePresignedUploadResponse) GetObjectKey() string {
@@ -1028,7 +1408,7 @@ type PresignedUploadPart struct {
 
 func (x *PresignedUploadPart) Reset() {
 	*x = PresignedUploadPart{}
-	mi := &file_rin_problem_v1_problem_proto_msgTypes[12]
+	mi := &file_rin_problem_v1_problem_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1040,7 +1420,7 @@ func (x *PresignedUploadPart) String() string {
 func (*PresignedUploadPart) ProtoMessage() {}
 
 func (x *PresignedUploadPart) ProtoReflect() protoreflect.Message {
-	mi := &file_rin_problem_v1_problem_proto_msgTypes[12]
+	mi := &file_rin_problem_v1_problem_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1053,7 +1433,7 @@ func (x *PresignedUploadPart) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PresignedUploadPart.ProtoReflect.Descriptor instead.
 func (*PresignedUploadPart) Descriptor() ([]byte, []int) {
-	return file_rin_problem_v1_problem_proto_rawDescGZIP(), []int{12}
+	return file_rin_problem_v1_problem_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *PresignedUploadPart) GetPartNumber() int32 {
@@ -1087,7 +1467,7 @@ type PublishProblemRequest struct {
 
 func (x *PublishProblemRequest) Reset() {
 	*x = PublishProblemRequest{}
-	mi := &file_rin_problem_v1_problem_proto_msgTypes[13]
+	mi := &file_rin_problem_v1_problem_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1099,7 +1479,7 @@ func (x *PublishProblemRequest) String() string {
 func (*PublishProblemRequest) ProtoMessage() {}
 
 func (x *PublishProblemRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_rin_problem_v1_problem_proto_msgTypes[13]
+	mi := &file_rin_problem_v1_problem_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1112,7 +1492,7 @@ func (x *PublishProblemRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PublishProblemRequest.ProtoReflect.Descriptor instead.
 func (*PublishProblemRequest) Descriptor() ([]byte, []int) {
-	return file_rin_problem_v1_problem_proto_rawDescGZIP(), []int{13}
+	return file_rin_problem_v1_problem_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *PublishProblemRequest) GetActorId() string {
@@ -1139,7 +1519,7 @@ type GetProblemRequest struct {
 
 func (x *GetProblemRequest) Reset() {
 	*x = GetProblemRequest{}
-	mi := &file_rin_problem_v1_problem_proto_msgTypes[14]
+	mi := &file_rin_problem_v1_problem_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1151,7 +1531,7 @@ func (x *GetProblemRequest) String() string {
 func (*GetProblemRequest) ProtoMessage() {}
 
 func (x *GetProblemRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_rin_problem_v1_problem_proto_msgTypes[14]
+	mi := &file_rin_problem_v1_problem_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1164,7 +1544,7 @@ func (x *GetProblemRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetProblemRequest.ProtoReflect.Descriptor instead.
 func (*GetProblemRequest) Descriptor() ([]byte, []int) {
-	return file_rin_problem_v1_problem_proto_rawDescGZIP(), []int{14}
+	return file_rin_problem_v1_problem_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *GetProblemRequest) GetProblemId() string {
@@ -1193,7 +1573,7 @@ type ListProblemsRequest struct {
 
 func (x *ListProblemsRequest) Reset() {
 	*x = ListProblemsRequest{}
-	mi := &file_rin_problem_v1_problem_proto_msgTypes[15]
+	mi := &file_rin_problem_v1_problem_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1205,7 +1585,7 @@ func (x *ListProblemsRequest) String() string {
 func (*ListProblemsRequest) ProtoMessage() {}
 
 func (x *ListProblemsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_rin_problem_v1_problem_proto_msgTypes[15]
+	mi := &file_rin_problem_v1_problem_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1218,7 +1598,7 @@ func (x *ListProblemsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListProblemsRequest.ProtoReflect.Descriptor instead.
 func (*ListProblemsRequest) Descriptor() ([]byte, []int) {
-	return file_rin_problem_v1_problem_proto_rawDescGZIP(), []int{15}
+	return file_rin_problem_v1_problem_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *ListProblemsRequest) GetCursor() string {
@@ -1259,7 +1639,7 @@ type ListProblemsResponse struct {
 
 func (x *ListProblemsResponse) Reset() {
 	*x = ListProblemsResponse{}
-	mi := &file_rin_problem_v1_problem_proto_msgTypes[16]
+	mi := &file_rin_problem_v1_problem_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1271,7 +1651,7 @@ func (x *ListProblemsResponse) String() string {
 func (*ListProblemsResponse) ProtoMessage() {}
 
 func (x *ListProblemsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_rin_problem_v1_problem_proto_msgTypes[16]
+	mi := &file_rin_problem_v1_problem_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1284,7 +1664,7 @@ func (x *ListProblemsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListProblemsResponse.ProtoReflect.Descriptor instead.
 func (*ListProblemsResponse) Descriptor() ([]byte, []int) {
-	return file_rin_problem_v1_problem_proto_rawDescGZIP(), []int{16}
+	return file_rin_problem_v1_problem_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *ListProblemsResponse) GetProblems() []*Problem {
@@ -1344,11 +1724,53 @@ const file_rin_problem_v1_problem_proto_rawDesc = "" +
 	"\x04type\x18\x03 \x01(\x0e2\x1b.rin.problem.v1.ProblemTypeR\x04type\x12B\n" +
 	"\n" +
 	"statements\x18\x04 \x03(\v2\".rin.problem.v1.LocalizedStatementR\n" +
-	"statements\"\x8e\x01\n" +
+	"statements\"\xeb\x01\n" +
 	"\x1cValidateProblemImportRequest\x12\x19\n" +
 	"\bactor_id\x18\x01 \x01(\tR\aactorId\x12*\n" +
 	"\x11upload_object_key\x18\x02 \x01(\tR\x0fuploadObjectKey\x12'\n" +
-	"\x0fsource_filename\x18\x03 \x01(\tR\x0esourceFilename\"\xe4\x01\n" +
+	"\x0fsource_filename\x18\x03 \x01(\tR\x0esourceFilename\x12I\n" +
+	"\rflat_metadata\x18\x04 \x01(\v2\x1f.rin.problem.v1.FlatZIPMetadataH\x00R\fflatMetadata\x88\x01\x01B\x10\n" +
+	"\x0e_flat_metadata\"\x88\x01\n" +
+	"\x0fFlatZIPMetadata\x12\x14\n" +
+	"\x05title\x18\x01 \x01(\tR\x05title\x12\x1d\n" +
+	"\n" +
+	"time_limit\x18\x02 \x01(\x05R\ttimeLimit\x12!\n" +
+	"\fmemory_limit\x18\x03 \x01(\x05R\vmemoryLimit\x12\x1d\n" +
+	"\n" +
+	"judge_type\x18\x04 \x01(\tR\tjudgeType\"<\n" +
+	"\fInlineSample\x12\x14\n" +
+	"\x05input\x18\x01 \x01(\tR\x05input\x12\x16\n" +
+	"\x06output\x18\x02 \x01(\tR\x06output\"\xa6\x01\n" +
+	"\x0eInlineTestCase\x12\x1d\n" +
+	"\n" +
+	"input_text\x18\x01 \x01(\tR\tinputText\x12\x1f\n" +
+	"\voutput_text\x18\x02 \x01(\tR\n" +
+	"outputText\x12(\n" +
+	"\x10input_object_key\x18\x03 \x01(\tR\x0einputObjectKey\x12*\n" +
+	"\x11output_object_key\x18\x04 \x01(\tR\x0foutputObjectKey\"\x9e\x03\n" +
+	"\x18CreateInlineDraftRequest\x12\x19\n" +
+	"\bactor_id\x18\x01 \x01(\tR\aactorId\x12\x14\n" +
+	"\x05title\x18\x02 \x01(\tR\x05title\x12\x1d\n" +
+	"\n" +
+	"time_limit\x18\x03 \x01(\x05R\ttimeLimit\x12!\n" +
+	"\fmemory_limit\x18\x04 \x01(\x05R\vmemoryLimit\x12\x1d\n" +
+	"\n" +
+	"judge_type\x18\x05 \x01(\tR\tjudgeType\x12\x16\n" +
+	"\x06locale\x18\x06 \x01(\tR\x06locale\x12\x1c\n" +
+	"\tstatement\x18\a \x01(\tR\tstatement\x126\n" +
+	"\asamples\x18\b \x03(\v2\x1c.rin.problem.v1.InlineSampleR\asamples\x12=\n" +
+	"\n" +
+	"test_cases\x18\t \x03(\v2\x1e.rin.problem.v1.InlineTestCaseR\ttestCases\x12\x19\n" +
+	"\bclass_id\x18\n" +
+	" \x01(\tR\aclassId\x12(\n" +
+	"\x10note_to_reviewer\x18\v \x01(\tR\x0enoteToReviewer\"u\n" +
+	"\x19CreateInlineDraftResponse\x12\x19\n" +
+	"\bdraft_id\x18\x01 \x01(\tR\adraftId\x12\x1d\n" +
+	"\n" +
+	"problem_id\x18\x02 \x01(\tR\tproblemId\x12\x1e\n" +
+	"\n" +
+	"visibility\x18\x03 \x01(\tR\n" +
+	"visibility\"\xe4\x01\n" +
 	"\x19TeacherQuickUploadRequest\x12\x1d\n" +
 	"\n" +
 	"teacher_id\x18\x01 \x01(\tR\tteacherId\x12\x19\n" +
@@ -1433,10 +1855,11 @@ const file_rin_problem_v1_problem_proto_rawDesc = "" +
 	"\x18PROBLEM_TYPE_INTERACTIVE\x10\x03\x12\x1e\n" +
 	"\x1aPROBLEM_TYPE_SUBMIT_ANSWER\x10\x04\x12\x1c\n" +
 	"\x18PROBLEM_TYPE_OUTPUT_ONLY\x10\x05\x12\x1e\n" +
-	"\x1aPROBLEM_TYPE_COMMUNICATION\x10\x062\x87\x06\n" +
+	"\x1aPROBLEM_TYPE_COMMUNICATION\x10\x062\xf1\x06\n" +
 	"\x0eProblemService\x12]\n" +
 	"\x12CreateProblemDraft\x12).rin.problem.v1.CreateProblemDraftRequest\x1a\x1c.rin.problem.v1.ProblemDraft\x12c\n" +
-	"\x15ValidateProblemImport\x12,.rin.problem.v1.ValidateProblemImportRequest\x1a\x1c.rin.problem.v1.ImportWizard\x12]\n" +
+	"\x15ValidateProblemImport\x12,.rin.problem.v1.ValidateProblemImportRequest\x1a\x1c.rin.problem.v1.ImportWizard\x12h\n" +
+	"\x11CreateInlineDraft\x12(.rin.problem.v1.CreateInlineDraftRequest\x1a).rin.problem.v1.CreateInlineDraftResponse\x12]\n" +
 	"\x12TeacherQuickUpload\x12).rin.problem.v1.TeacherQuickUploadRequest\x1a\x1c.rin.problem.v1.ProblemDraft\x12e\n" +
 	"\x16StudentDraftSubmission\x12-.rin.problem.v1.StudentDraftSubmissionRequest\x1a\x1c.rin.problem.v1.ProblemDraft\x12t\n" +
 	"\x15CreatePresignedUpload\x12,.rin.problem.v1.CreatePresignedUploadRequest\x1a-.rin.problem.v1.CreatePresignedUploadResponse\x12P\n" +
@@ -1458,7 +1881,7 @@ func file_rin_problem_v1_problem_proto_rawDescGZIP() []byte {
 }
 
 var file_rin_problem_v1_problem_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_rin_problem_v1_problem_proto_msgTypes = make([]protoimpl.MessageInfo, 18)
+var file_rin_problem_v1_problem_proto_msgTypes = make([]protoimpl.MessageInfo, 23)
 var file_rin_problem_v1_problem_proto_goTypes = []any{
 	(ProblemVisibility)(0),                // 0: rin.problem.v1.ProblemVisibility
 	(ProblemType)(0),                      // 1: rin.problem.v1.ProblemType
@@ -1467,56 +1890,66 @@ var file_rin_problem_v1_problem_proto_goTypes = []any{
 	(*ProblemDraft)(nil),                  // 4: rin.problem.v1.ProblemDraft
 	(*CreateProblemDraftRequest)(nil),     // 5: rin.problem.v1.CreateProblemDraftRequest
 	(*ValidateProblemImportRequest)(nil),  // 6: rin.problem.v1.ValidateProblemImportRequest
-	(*TeacherQuickUploadRequest)(nil),     // 7: rin.problem.v1.TeacherQuickUploadRequest
-	(*StudentDraftSubmissionRequest)(nil), // 8: rin.problem.v1.StudentDraftSubmissionRequest
-	(*ImportWizard)(nil),                  // 9: rin.problem.v1.ImportWizard
-	(*SampleCase)(nil),                    // 10: rin.problem.v1.SampleCase
-	(*ImportValidation)(nil),              // 11: rin.problem.v1.ImportValidation
-	(*CreatePresignedUploadRequest)(nil),  // 12: rin.problem.v1.CreatePresignedUploadRequest
-	(*CreatePresignedUploadResponse)(nil), // 13: rin.problem.v1.CreatePresignedUploadResponse
-	(*PresignedUploadPart)(nil),           // 14: rin.problem.v1.PresignedUploadPart
-	(*PublishProblemRequest)(nil),         // 15: rin.problem.v1.PublishProblemRequest
-	(*GetProblemRequest)(nil),             // 16: rin.problem.v1.GetProblemRequest
-	(*ListProblemsRequest)(nil),           // 17: rin.problem.v1.ListProblemsRequest
-	(*ListProblemsResponse)(nil),          // 18: rin.problem.v1.ListProblemsResponse
-	nil,                                   // 19: rin.problem.v1.PresignedUploadPart.HeadersEntry
+	(*FlatZIPMetadata)(nil),               // 7: rin.problem.v1.FlatZIPMetadata
+	(*InlineSample)(nil),                  // 8: rin.problem.v1.InlineSample
+	(*InlineTestCase)(nil),                // 9: rin.problem.v1.InlineTestCase
+	(*CreateInlineDraftRequest)(nil),      // 10: rin.problem.v1.CreateInlineDraftRequest
+	(*CreateInlineDraftResponse)(nil),     // 11: rin.problem.v1.CreateInlineDraftResponse
+	(*TeacherQuickUploadRequest)(nil),     // 12: rin.problem.v1.TeacherQuickUploadRequest
+	(*StudentDraftSubmissionRequest)(nil), // 13: rin.problem.v1.StudentDraftSubmissionRequest
+	(*ImportWizard)(nil),                  // 14: rin.problem.v1.ImportWizard
+	(*SampleCase)(nil),                    // 15: rin.problem.v1.SampleCase
+	(*ImportValidation)(nil),              // 16: rin.problem.v1.ImportValidation
+	(*CreatePresignedUploadRequest)(nil),  // 17: rin.problem.v1.CreatePresignedUploadRequest
+	(*CreatePresignedUploadResponse)(nil), // 18: rin.problem.v1.CreatePresignedUploadResponse
+	(*PresignedUploadPart)(nil),           // 19: rin.problem.v1.PresignedUploadPart
+	(*PublishProblemRequest)(nil),         // 20: rin.problem.v1.PublishProblemRequest
+	(*GetProblemRequest)(nil),             // 21: rin.problem.v1.GetProblemRequest
+	(*ListProblemsRequest)(nil),           // 22: rin.problem.v1.ListProblemsRequest
+	(*ListProblemsResponse)(nil),          // 23: rin.problem.v1.ListProblemsResponse
+	nil,                                   // 24: rin.problem.v1.PresignedUploadPart.HeadersEntry
 }
 var file_rin_problem_v1_problem_proto_depIdxs = []int32{
 	1,  // 0: rin.problem.v1.Problem.type:type_name -> rin.problem.v1.ProblemType
 	0,  // 1: rin.problem.v1.Problem.visibility:type_name -> rin.problem.v1.ProblemVisibility
 	3,  // 2: rin.problem.v1.Problem.statements:type_name -> rin.problem.v1.LocalizedStatement
 	0,  // 3: rin.problem.v1.ProblemDraft.visibility:type_name -> rin.problem.v1.ProblemVisibility
-	9,  // 4: rin.problem.v1.ProblemDraft.import_wizard:type_name -> rin.problem.v1.ImportWizard
+	14, // 4: rin.problem.v1.ProblemDraft.import_wizard:type_name -> rin.problem.v1.ImportWizard
 	1,  // 5: rin.problem.v1.CreateProblemDraftRequest.type:type_name -> rin.problem.v1.ProblemType
 	3,  // 6: rin.problem.v1.CreateProblemDraftRequest.statements:type_name -> rin.problem.v1.LocalizedStatement
-	1,  // 7: rin.problem.v1.ImportWizard.detected_type:type_name -> rin.problem.v1.ProblemType
-	3,  // 8: rin.problem.v1.ImportWizard.statements:type_name -> rin.problem.v1.LocalizedStatement
-	10, // 9: rin.problem.v1.ImportWizard.samples:type_name -> rin.problem.v1.SampleCase
-	11, // 10: rin.problem.v1.ImportWizard.validations:type_name -> rin.problem.v1.ImportValidation
-	14, // 11: rin.problem.v1.CreatePresignedUploadResponse.parts:type_name -> rin.problem.v1.PresignedUploadPart
-	19, // 12: rin.problem.v1.PresignedUploadPart.headers:type_name -> rin.problem.v1.PresignedUploadPart.HeadersEntry
-	2,  // 13: rin.problem.v1.ListProblemsResponse.problems:type_name -> rin.problem.v1.Problem
-	5,  // 14: rin.problem.v1.ProblemService.CreateProblemDraft:input_type -> rin.problem.v1.CreateProblemDraftRequest
-	6,  // 15: rin.problem.v1.ProblemService.ValidateProblemImport:input_type -> rin.problem.v1.ValidateProblemImportRequest
-	7,  // 16: rin.problem.v1.ProblemService.TeacherQuickUpload:input_type -> rin.problem.v1.TeacherQuickUploadRequest
-	8,  // 17: rin.problem.v1.ProblemService.StudentDraftSubmission:input_type -> rin.problem.v1.StudentDraftSubmissionRequest
-	12, // 18: rin.problem.v1.ProblemService.CreatePresignedUpload:input_type -> rin.problem.v1.CreatePresignedUploadRequest
-	15, // 19: rin.problem.v1.ProblemService.PublishProblem:input_type -> rin.problem.v1.PublishProblemRequest
-	16, // 20: rin.problem.v1.ProblemService.GetProblem:input_type -> rin.problem.v1.GetProblemRequest
-	17, // 21: rin.problem.v1.ProblemService.ListProblems:input_type -> rin.problem.v1.ListProblemsRequest
-	4,  // 22: rin.problem.v1.ProblemService.CreateProblemDraft:output_type -> rin.problem.v1.ProblemDraft
-	9,  // 23: rin.problem.v1.ProblemService.ValidateProblemImport:output_type -> rin.problem.v1.ImportWizard
-	4,  // 24: rin.problem.v1.ProblemService.TeacherQuickUpload:output_type -> rin.problem.v1.ProblemDraft
-	4,  // 25: rin.problem.v1.ProblemService.StudentDraftSubmission:output_type -> rin.problem.v1.ProblemDraft
-	13, // 26: rin.problem.v1.ProblemService.CreatePresignedUpload:output_type -> rin.problem.v1.CreatePresignedUploadResponse
-	2,  // 27: rin.problem.v1.ProblemService.PublishProblem:output_type -> rin.problem.v1.Problem
-	2,  // 28: rin.problem.v1.ProblemService.GetProblem:output_type -> rin.problem.v1.Problem
-	18, // 29: rin.problem.v1.ProblemService.ListProblems:output_type -> rin.problem.v1.ListProblemsResponse
-	22, // [22:30] is the sub-list for method output_type
-	14, // [14:22] is the sub-list for method input_type
-	14, // [14:14] is the sub-list for extension type_name
-	14, // [14:14] is the sub-list for extension extendee
-	0,  // [0:14] is the sub-list for field type_name
+	7,  // 7: rin.problem.v1.ValidateProblemImportRequest.flat_metadata:type_name -> rin.problem.v1.FlatZIPMetadata
+	8,  // 8: rin.problem.v1.CreateInlineDraftRequest.samples:type_name -> rin.problem.v1.InlineSample
+	9,  // 9: rin.problem.v1.CreateInlineDraftRequest.test_cases:type_name -> rin.problem.v1.InlineTestCase
+	1,  // 10: rin.problem.v1.ImportWizard.detected_type:type_name -> rin.problem.v1.ProblemType
+	3,  // 11: rin.problem.v1.ImportWizard.statements:type_name -> rin.problem.v1.LocalizedStatement
+	15, // 12: rin.problem.v1.ImportWizard.samples:type_name -> rin.problem.v1.SampleCase
+	16, // 13: rin.problem.v1.ImportWizard.validations:type_name -> rin.problem.v1.ImportValidation
+	19, // 14: rin.problem.v1.CreatePresignedUploadResponse.parts:type_name -> rin.problem.v1.PresignedUploadPart
+	24, // 15: rin.problem.v1.PresignedUploadPart.headers:type_name -> rin.problem.v1.PresignedUploadPart.HeadersEntry
+	2,  // 16: rin.problem.v1.ListProblemsResponse.problems:type_name -> rin.problem.v1.Problem
+	5,  // 17: rin.problem.v1.ProblemService.CreateProblemDraft:input_type -> rin.problem.v1.CreateProblemDraftRequest
+	6,  // 18: rin.problem.v1.ProblemService.ValidateProblemImport:input_type -> rin.problem.v1.ValidateProblemImportRequest
+	10, // 19: rin.problem.v1.ProblemService.CreateInlineDraft:input_type -> rin.problem.v1.CreateInlineDraftRequest
+	12, // 20: rin.problem.v1.ProblemService.TeacherQuickUpload:input_type -> rin.problem.v1.TeacherQuickUploadRequest
+	13, // 21: rin.problem.v1.ProblemService.StudentDraftSubmission:input_type -> rin.problem.v1.StudentDraftSubmissionRequest
+	17, // 22: rin.problem.v1.ProblemService.CreatePresignedUpload:input_type -> rin.problem.v1.CreatePresignedUploadRequest
+	20, // 23: rin.problem.v1.ProblemService.PublishProblem:input_type -> rin.problem.v1.PublishProblemRequest
+	21, // 24: rin.problem.v1.ProblemService.GetProblem:input_type -> rin.problem.v1.GetProblemRequest
+	22, // 25: rin.problem.v1.ProblemService.ListProblems:input_type -> rin.problem.v1.ListProblemsRequest
+	4,  // 26: rin.problem.v1.ProblemService.CreateProblemDraft:output_type -> rin.problem.v1.ProblemDraft
+	14, // 27: rin.problem.v1.ProblemService.ValidateProblemImport:output_type -> rin.problem.v1.ImportWizard
+	11, // 28: rin.problem.v1.ProblemService.CreateInlineDraft:output_type -> rin.problem.v1.CreateInlineDraftResponse
+	4,  // 29: rin.problem.v1.ProblemService.TeacherQuickUpload:output_type -> rin.problem.v1.ProblemDraft
+	4,  // 30: rin.problem.v1.ProblemService.StudentDraftSubmission:output_type -> rin.problem.v1.ProblemDraft
+	18, // 31: rin.problem.v1.ProblemService.CreatePresignedUpload:output_type -> rin.problem.v1.CreatePresignedUploadResponse
+	2,  // 32: rin.problem.v1.ProblemService.PublishProblem:output_type -> rin.problem.v1.Problem
+	2,  // 33: rin.problem.v1.ProblemService.GetProblem:output_type -> rin.problem.v1.Problem
+	23, // 34: rin.problem.v1.ProblemService.ListProblems:output_type -> rin.problem.v1.ListProblemsResponse
+	26, // [26:35] is the sub-list for method output_type
+	17, // [17:26] is the sub-list for method input_type
+	17, // [17:17] is the sub-list for extension type_name
+	17, // [17:17] is the sub-list for extension extendee
+	0,  // [0:17] is the sub-list for field type_name
 }
 
 func init() { file_rin_problem_v1_problem_proto_init() }
@@ -1524,13 +1957,14 @@ func file_rin_problem_v1_problem_proto_init() {
 	if File_rin_problem_v1_problem_proto != nil {
 		return
 	}
+	file_rin_problem_v1_problem_proto_msgTypes[4].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_rin_problem_v1_problem_proto_rawDesc), len(file_rin_problem_v1_problem_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   18,
+			NumMessages:   23,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

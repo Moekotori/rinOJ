@@ -33,8 +33,11 @@ const (
 )
 
 type ProblemManifest struct {
-	Title string      `json:"title"`
-	Type  ProblemType `json:"type"`
+	Title       string      `json:"title"`
+	TimeLimit   int         `json:"timeLimit"`
+	MemoryLimit int         `json:"memoryLimit"`
+	Type        ProblemType `json:"type"`
+	JudgeType   ProblemType `json:"judgeType"`
 }
 
 type ProblemPackage struct {
@@ -86,7 +89,7 @@ func ValidateProblemImport(pkg ProblemPackage) ImportWizard {
 	wizard := ImportWizard{
 		ImportID:      newID("imp"),
 		DetectedTitle: strings.TrimSpace(pkg.ProblemJSON.Title),
-		DetectedType:  normalizeProblemType(pkg.ProblemJSON.Type),
+		DetectedType:  normalizeProblemType(problemManifestType(pkg.ProblemJSON)),
 		Statements:    pkg.Statements,
 		Samples:       pkg.Samples,
 		NextActions: []string{
@@ -154,6 +157,10 @@ type UploadSigner interface {
 	PresignUploadPart(ctx context.Context, objectKey string, partNumber int32, expires time.Duration) (PresignedUploadPart, error)
 }
 
+type TextObjectWriter interface {
+	PutText(ctx context.Context, objectKey string, content string) error
+}
+
 type DraftRepository interface {
 	SaveDraft(ctx context.Context, draft ProblemDraft) error
 	GetDraft(ctx context.Context, draftID string) (ProblemDraft, error)
@@ -162,6 +169,7 @@ type DraftRepository interface {
 type Service struct {
 	repository DraftRepository
 	signer     UploadSigner
+	textWriter TextObjectWriter
 	ids        IDGenerator
 }
 
@@ -176,6 +184,12 @@ func WithDraftRepository(repository DraftRepository) Option {
 func WithUploadSigner(signer UploadSigner) Option {
 	return func(service *Service) {
 		service.signer = signer
+	}
+}
+
+func WithTextObjectWriter(writer TextObjectWriter) Option {
+	return func(service *Service) {
+		service.textWriter = writer
 	}
 }
 
@@ -213,6 +227,27 @@ type StudentDraftSubmissionInput struct {
 	Wizard          ImportWizard
 }
 
+type InlineDraftInput struct {
+	ActorID        string
+	Title          string
+	TimeLimit      int
+	MemoryLimit    int
+	JudgeType      ProblemType
+	Locale         string
+	Statement      string
+	Samples        []SampleCase
+	TestCases      []InlineTestCase
+	ClassID        string
+	NoteToReviewer string
+}
+
+type InlineTestCase struct {
+	InputText       string
+	OutputText      string
+	InputObjectKey  string
+	OutputObjectKey string
+}
+
 type ProblemDraft struct {
 	DraftID         string
 	ProblemID       string
@@ -245,10 +280,18 @@ type PresignedUploadPart struct {
 	Headers    map[string]string
 }
 
+type FlatZIPMetadata struct {
+	Title       string
+	TimeLimit   int
+	MemoryLimit int
+	JudgeType   ProblemType
+}
+
 type ValidateProblemImportInput struct {
 	ActorID         string
 	UploadObjectKey string
 	SourceFilename  string
+	FlatMetadata    *FlatZIPMetadata
 }
 
 func (s *Service) CreatePresignedUpload(ctx context.Context, input CreatePresignedUploadInput) (CreatePresignedUploadOutput, error) {
@@ -303,14 +346,21 @@ func (s *Service) ValidateProblemImport(input ValidateProblemImportInput) (Impor
 	}
 
 	title := humanizeProblemTitle(input.SourceFilename)
+	detectedType := ProblemTypeTraditional
+	if input.FlatMetadata != nil {
+		if strings.TrimSpace(input.FlatMetadata.Title) != "" {
+			title = strings.TrimSpace(input.FlatMetadata.Title)
+		}
+		detectedType = normalizeProblemType(input.FlatMetadata.JudgeType)
+	}
 
 	// This is the synchronous metadata pass. A later ZIP parser can enrich the
 	// same ImportWizard with real statements, samples, tests, and stronger
 	// validations without changing the gRPC or HTTP contract.
-	return ImportWizard{
+	wizard := ImportWizard{
 		ImportID:      s.ids.NewID("imp"),
 		DetectedTitle: title,
-		DetectedType:  ProblemTypeTraditional,
+		DetectedType:  detectedType,
 		Statements: map[string]string{
 			"zh-CN": "# " + title + "\n",
 		},
@@ -328,7 +378,16 @@ func (s *Service) ValidateProblemImport(input ValidateProblemImportInput) (Impor
 			"save_private_draft",
 			"request_review",
 		},
-	}, nil
+	}
+	if input.FlatMetadata != nil {
+		wizard.Validations = append(wizard.Validations, ImportValidation{
+			Code:     "package.flat_metadata.accepted",
+			Severity: "info",
+			Message:  "Simplified ZIP metadata accepted. The flat ZIP parser will verify statement.md and root .in/.out pairs before publish.",
+			Path:     input.UploadObjectKey,
+		})
+	}
+	return wizard, nil
 }
 
 func (s *Service) TeacherQuickUpload(input TeacherQuickUploadInput) (ProblemDraft, error) {
@@ -388,6 +447,104 @@ func (s *Service) StudentDraftSubmission(input StudentDraftSubmissionInput) (Pro
 	return draft, nil
 }
 
+func (s *Service) CreateInlineDraft(input InlineDraftInput) (ProblemDraft, error) {
+	actorID := strings.TrimSpace(input.ActorID)
+	if actorID == "" {
+		return ProblemDraft{}, errors.New("actor id is required")
+	}
+	title := strings.TrimSpace(input.Title)
+	if title == "" {
+		return ProblemDraft{}, errors.New("title is required")
+	}
+	statement := strings.TrimSpace(input.Statement)
+	if statement == "" {
+		return ProblemDraft{}, errors.New("statement is required")
+	}
+
+	timeLimit := defaultPositive(input.TimeLimit, 1000)
+	memoryLimit := defaultPositive(input.MemoryLimit, 256)
+	locale := strings.TrimSpace(input.Locale)
+	if locale == "" {
+		locale = "zh-CN"
+	}
+
+	testFiles := make([]string, 0, len(input.TestCases)*2)
+	for index, testCase := range input.TestCases {
+		inputKey, outputKey, err := s.materializeInlineTestCase(actorID, index+1, testCase)
+		if err != nil {
+			return ProblemDraft{}, err
+		}
+		testFiles = append(testFiles, inputKey, outputKey)
+	}
+
+	pkg := ProblemPackage{
+		SourceFilename: "inline-form",
+		ProblemJSON: ProblemManifest{
+			Title:       title,
+			TimeLimit:   timeLimit,
+			MemoryLimit: memoryLimit,
+			Type:        normalizeProblemType(input.JudgeType),
+			JudgeType:   normalizeProblemType(input.JudgeType),
+		},
+		Statements: map[string]string{
+			locale: input.Statement,
+		},
+		Samples:   append([]SampleCase(nil), input.Samples...),
+		TestFiles: testFiles,
+	}
+	wizard := ValidateProblemImport(pkg)
+	draft := ProblemDraft{
+		DraftID:      s.ids.NewID("draft"),
+		ProblemID:    s.ids.NewID("prob"),
+		OwnerUserID:  actorID,
+		ClassID:      input.ClassID,
+		Title:        title,
+		Visibility:   VisibilityPrivate,
+		ReviewerNote: input.NoteToReviewer,
+		Wizard:       wizard,
+	}
+	if err := s.repository.SaveDraft(context.Background(), draft); err != nil {
+		return ProblemDraft{}, err
+	}
+	return draft, nil
+}
+
+func (s *Service) materializeInlineTestCase(actorID string, number int, testCase InlineTestCase) (string, string, error) {
+	inputKey := strings.TrimSpace(testCase.InputObjectKey)
+	outputKey := strings.TrimSpace(testCase.OutputObjectKey)
+	if strings.TrimSpace(testCase.InputText) == "" && inputKey == "" {
+		return "", "", fmt.Errorf("test case %d input is required", number)
+	}
+	if strings.TrimSpace(testCase.OutputText) == "" && outputKey == "" {
+		return "", "", fmt.Errorf("test case %d output is required", number)
+	}
+
+	if inputKey == "" {
+		inputKey = s.inlineTestObjectKey(actorID, number, "in")
+		if err := s.putInlineText(inputKey, testCase.InputText); err != nil {
+			return "", "", err
+		}
+	}
+	if outputKey == "" {
+		outputKey = s.inlineTestObjectKey(actorID, number, "out")
+		if err := s.putInlineText(outputKey, testCase.OutputText); err != nil {
+			return "", "", err
+		}
+	}
+	return inputKey, outputKey, nil
+}
+
+func (s *Service) inlineTestObjectKey(actorID string, number int, extension string) string {
+	return fmt.Sprintf("problem-intake/%s/inline/%s/%03d.%s", sanitizePathSegment(actorID), s.ids.NewID("case"), number, extension)
+}
+
+func (s *Service) putInlineText(objectKey string, content string) error {
+	if s.textWriter == nil {
+		return nil
+	}
+	return s.textWriter.PutText(context.Background(), objectKey, content)
+}
+
 func (s *Service) GetDraft(ctx context.Context, draftID string) (ProblemDraft, error) {
 	return s.repository.GetDraft(ctx, draftID)
 }
@@ -399,6 +556,13 @@ func normalizeProblemType(value ProblemType) ProblemType {
 	default:
 		return ProblemTypeTraditional
 	}
+}
+
+func problemManifestType(manifest ProblemManifest) ProblemType {
+	if manifest.JudgeType != "" {
+		return manifest.JudgeType
+	}
+	return manifest.Type
 }
 
 func hasInputAndOutput(files []string) bool {
@@ -477,7 +641,7 @@ func sanitizeFilename(value string) string {
 	if value == "" {
 		return "problem.zip"
 	}
-	if !strings.HasSuffix(value, ".zip") {
+	if filepath.Ext(value) == "" {
 		value += ".zip"
 	}
 	return value

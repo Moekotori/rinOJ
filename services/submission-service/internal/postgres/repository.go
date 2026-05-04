@@ -103,8 +103,8 @@ func (r *Repository) UpdateStatus(ctx context.Context, id string, status submiss
 
 	row := r.pool.QueryRow(ctx, `
 UPDATE submissions
-SET status = $2,
-    score = CASE WHEN $2 = 'accepted' THEN 100 ELSE score END,
+SET status = $2::submission_status,
+    score = CASE WHEN $2::submission_status = 'accepted'::submission_status THEN 100 ELSE score END,
     updated_at = now()
 WHERE submission_id = $1
 RETURNING submission_id, actor_id, problem_id, contest_id, language_id, status, score, extract(epoch from created_at)::bigint

@@ -30,43 +30,51 @@ export default function ContestDetailPage() {
   return (
     <OJShell>
       <div className="mx-auto grid w-full max-w-7xl gap-5 px-4 py-5 sm:px-6 lg:px-8">
-        <section className="rounded-lg border border-slate-200 bg-white shadow-sm">
-          <div className="grid gap-4 border-b border-slate-200 px-4 py-4 lg:grid-cols-[1fr_auto] lg:items-center">
+        <section className="rin-card overflow-hidden border border-slate-200/80">
+          <div className="rin-card-head grid gap-5 px-5 py-5 lg:grid-cols-[1fr_auto] lg:items-center">
             <div>
               <div className="flex items-center gap-2 text-sm font-semibold text-slate-500">
-                <Trophy className="h-4 w-4" />
+                <span className="rin-icon-tile rin-icon-tile--amber">
+                  <Trophy className="h-3.5 w-3.5" />
+                </span>
                 {t("contest.overview")}
               </div>
-              <h1 className="mt-1 text-2xl font-black text-slate-950">{locale === "zh-CN" ? contest.titleZh : contest.title}</h1>
+              <h1 className="mt-2 text-balance text-2xl font-black tracking-tight text-slate-950 sm:text-[1.65rem]">{locale === "zh-CN" ? contest.titleZh : contest.title}</h1>
             </div>
             <div className="grid gap-2 text-sm sm:grid-cols-3">
-              <SummaryItem icon={<Trophy className="h-4 w-4" />} label={t("contests.mode")} value={contest.mode} />
-              <SummaryItem icon={<CalendarClock className="h-4 w-4" />} label={t("contests.time")} value={locale === "zh-CN" ? contest.timeZh : contest.time} />
-              <SummaryItem icon={<UsersRound className="h-4 w-4" />} label={t("contests.registered")} value={contest.registered} />
+              <SummaryItem tone="amber" icon={<Trophy className="h-3.5 w-3.5" aria-hidden />} label={t("contests.mode")} value={contest.mode} />
+              <SummaryItem tone="sky" icon={<CalendarClock className="h-3.5 w-3.5" aria-hidden />} label={t("contests.time")} value={locale === "zh-CN" ? contest.timeZh : contest.time} />
+              <SummaryItem tone="violet" icon={<UsersRound className="h-3.5 w-3.5" aria-hidden />} label={t("contests.registered")} value={contest.registered} />
             </div>
           </div>
         </section>
 
         <section className="grid gap-5 lg:grid-cols-[minmax(0,1.05fr)_minmax(360px,0.95fr)]">
-          <div className="rounded-lg border border-slate-200 bg-white shadow-sm">
-            <div className="flex items-center gap-2 border-b border-slate-200 px-4 py-3 text-sm font-semibold text-slate-500">
-              <ListChecks className="h-4 w-4" />
+          <div className="rin-card overflow-hidden border border-slate-200/80">
+            <div className="rin-card-head flex items-center gap-2 px-4 py-3.5 text-sm font-semibold text-slate-500">
+              <span className="rin-icon-tile rin-icon-tile--sky">
+                <ListChecks className="h-3.5 w-3.5" />
+              </span>
               {t("contest.problemList")}
             </div>
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[640px] border-collapse text-left text-sm">
-                <thead className="bg-slate-50 text-xs font-bold text-slate-500">
-                  <tr>
+              <table className="rin-table w-full min-w-[640px] border-collapse text-left text-sm">
+                <thead>
+                  <tr className="bg-gradient-to-r from-slate-50 to-slate-50/60 text-xs font-bold uppercase tracking-wide text-slate-500">
                     <th className="px-4 py-3">{t("contest.alias")}</th>
                     <th className="px-4 py-3">{t("table.title")}</th>
                     <th className="px-4 py-3">{t("table.difficulty")}</th>
                     <th className="px-4 py-3">{t("contest.points")}</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-slate-100/80">
                   {entries.map((entry) => (
-                    <tr key={`${entry.contestId}-${entry.problemId}`} className="hover:bg-sky-50/70">
-                      <td className="px-4 py-3 font-black text-sky-700">{entry.alias}</td>
+                    <tr key={`${entry.contestId}-${entry.problemId}`}>
+                      <td className="px-4 py-3">
+                        <Link className="rin-pill-problem font-mono text-xs font-black" href={`/problems/${entry.problemId}`}>
+                          {entry.alias}
+                        </Link>
+                      </td>
                       <td className="px-4 py-3">
                         <Link className="font-bold text-slate-950 hover:text-pink-600" href={`/problems/${entry.problemId}`}>
                           {locale === "zh-CN" ? entry.problem?.titleZh : entry.problem?.title}
@@ -81,15 +89,17 @@ export default function ContestDetailPage() {
             </div>
           </div>
 
-          <div className="rounded-lg border border-slate-200 bg-white shadow-sm">
-            <div className="flex items-center gap-2 border-b border-slate-200 px-4 py-3 text-sm font-semibold text-slate-500">
-              <Trophy className="h-4 w-4" />
+          <div className="rin-card overflow-hidden border border-slate-200/80">
+            <div className="rin-card-head flex items-center gap-2 px-4 py-3.5 text-sm font-semibold text-slate-500">
+              <span className="rin-icon-tile rin-icon-tile--amber">
+                <Trophy className="h-3.5 w-3.5" />
+              </span>
               {t("contest.standings")}
             </div>
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[520px] border-collapse text-left text-sm">
-                <thead className="bg-slate-50 text-xs font-bold text-slate-500">
-                  <tr>
+              <table className="rin-table w-full min-w-[520px] border-collapse text-left text-sm">
+                <thead>
+                  <tr className="bg-gradient-to-r from-slate-50 to-slate-50/60 text-xs font-bold uppercase tracking-wide text-slate-500">
                     <th className="px-4 py-3">{t("ranking.rank")}</th>
                     <th className="px-4 py-3">{t("ranking.user")}</th>
                     <th className="px-4 py-3">{t("contest.solved")}</th>
@@ -97,16 +107,16 @@ export default function ContestDetailPage() {
                     <th className="px-4 py-3">{t("contest.score")}</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-slate-100/80">
                   {standings.length === 0 ? (
                     <tr>
-                      <td className="px-4 py-8 text-center text-sm font-medium text-slate-500" colSpan={5}>
+                      <td className="px-4 py-10 text-center text-sm font-medium text-slate-400" colSpan={5}>
                         {t("contest.noRows")}
                       </td>
                     </tr>
                   ) : null}
                   {standings.map((row) => (
-                    <tr key={`${row.contestId}-${row.user}`} className="hover:bg-sky-50/70">
+                    <tr key={`${row.contestId}-${row.user}`}>
                       <td className="px-4 py-3 font-black text-slate-900">#{row.rank}</td>
                       <td className="px-4 py-3">
                         <Link className="font-bold text-slate-950 hover:text-pink-600" href={`/users/${row.user}`}>
@@ -128,14 +138,23 @@ export default function ContestDetailPage() {
   );
 }
 
-function SummaryItem({ icon, label, value }: Readonly<{ icon: ReactNode; label: string; value: string | number }>) {
+function SummaryItem({
+  tone = "sky",
+  icon,
+  label,
+  value,
+}: Readonly<{ tone?: "sky" | "amber" | "violet"; icon: ReactNode; label: string; value: string | number }>) {
+  const tile =
+    tone === "amber" ? "rin-icon-tile--amber" : tone === "violet" ? "rin-icon-tile--violet" : "rin-icon-tile--sky";
   return (
-    <div className="rounded-lg border border-slate-100 bg-slate-50 px-3 py-2">
-      <div className="flex items-center gap-2 text-xs font-semibold text-slate-500">
-        {icon}
-        {label}
+    <div className="rounded-xl border border-white/90 bg-gradient-to-b from-white to-slate-50/92 px-3 py-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,1),0_6px_18px_rgba(58,45,88,0.06)] ring-1 ring-slate-200/50 transition hover:ring-pink-100/80">
+      <div className="flex items-center gap-2.5">
+        <span className={`rin-icon-tile ${tile} h-9 w-9 rounded-xl [&>svg]:shrink-0`}>{icon}</span>
+        <div className="min-w-0 flex-1">
+          <div className="text-[11px] font-bold uppercase tracking-wide text-slate-500">{label}</div>
+          <div className="mt-0.5 truncate font-black tabular-nums text-slate-950">{value}</div>
+        </div>
       </div>
-      <div className="mt-1 font-black text-slate-950">{value}</div>
     </div>
   );
 }

@@ -2,6 +2,7 @@ package grpcserver
 
 import (
 	"context"
+	"fmt"
 	"sort"
 
 	problemv1 "github.com/rin-oj/rin-oj/packages/sdk-go/rin/problem/v1"
@@ -87,15 +88,66 @@ func (s *Server) CreateProblemDraft(ctx context.Context, req *problemv1.CreatePr
 }
 
 func (s *Server) ValidateProblemImport(ctx context.Context, req *problemv1.ValidateProblemImportRequest) (*problemv1.ImportWizard, error) {
+	var flatMetadata *intake.FlatZIPMetadata
+	if req.GetFlatMetadata() != nil {
+		flatMetadata = &intake.FlatZIPMetadata{
+			Title:       req.GetFlatMetadata().GetTitle(),
+			TimeLimit:   int(req.GetFlatMetadata().GetTimeLimit()),
+			MemoryLimit: int(req.GetFlatMetadata().GetMemoryLimit()),
+			JudgeType:   problemTypeFromString(req.GetFlatMetadata().GetJudgeType()),
+		}
+	}
 	wizard, err := s.service.ValidateProblemImport(intake.ValidateProblemImportInput{
 		ActorID:         req.GetActorId(),
 		UploadObjectKey: req.GetUploadObjectKey(),
 		SourceFilename:  req.GetSourceFilename(),
+		FlatMetadata:    flatMetadata,
 	})
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 	return importWizardToProto(wizard), nil
+}
+
+func (s *Server) CreateInlineDraft(ctx context.Context, req *problemv1.CreateInlineDraftRequest) (*problemv1.CreateInlineDraftResponse, error) {
+	samples := make([]intake.SampleCase, 0, len(req.GetSamples()))
+	for index, sample := range req.GetSamples() {
+		samples = append(samples, intake.SampleCase{
+			Name:   fmt.Sprintf("sample-%d", index+1),
+			Input:  sample.GetInput(),
+			Output: sample.GetOutput(),
+		})
+	}
+	testCases := make([]intake.InlineTestCase, 0, len(req.GetTestCases()))
+	for _, testCase := range req.GetTestCases() {
+		testCases = append(testCases, intake.InlineTestCase{
+			InputText:       testCase.GetInputText(),
+			OutputText:      testCase.GetOutputText(),
+			InputObjectKey:  testCase.GetInputObjectKey(),
+			OutputObjectKey: testCase.GetOutputObjectKey(),
+		})
+	}
+	draft, err := s.service.CreateInlineDraft(intake.InlineDraftInput{
+		ActorID:        req.GetActorId(),
+		Title:          req.GetTitle(),
+		TimeLimit:      int(req.GetTimeLimit()),
+		MemoryLimit:    int(req.GetMemoryLimit()),
+		JudgeType:      problemTypeFromString(req.GetJudgeType()),
+		Locale:         req.GetLocale(),
+		Statement:      req.GetStatement(),
+		Samples:        samples,
+		TestCases:      testCases,
+		ClassID:        req.GetClassId(),
+		NoteToReviewer: req.GetNoteToReviewer(),
+	})
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+	return &problemv1.CreateInlineDraftResponse{
+		DraftId:    draft.DraftID,
+		ProblemId:  draft.ProblemID,
+		Visibility: string(draft.Visibility),
+	}, nil
 }
 
 func (s *Server) PublishProblem(ctx context.Context, req *problemv1.PublishProblemRequest) (*problemv1.Problem, error) {
@@ -173,6 +225,17 @@ func problemTypeToProto(problemType intake.ProblemType) problemv1.ProblemType {
 		return problemv1.ProblemType_PROBLEM_TYPE_INTERACTIVE
 	default:
 		return problemv1.ProblemType_PROBLEM_TYPE_TRADITIONAL
+	}
+}
+
+func problemTypeFromString(value string) intake.ProblemType {
+	switch value {
+	case string(intake.ProblemTypeSpecialJudge):
+		return intake.ProblemTypeSpecialJudge
+	case string(intake.ProblemTypeInteractive):
+		return intake.ProblemTypeInteractive
+	default:
+		return intake.ProblemTypeTraditional
 	}
 }
 

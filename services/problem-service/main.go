@@ -26,7 +26,8 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		options = append(options, intake.WithUploadSigner(objectstore.NewMinIOUploadSigner(client, env("RIN_MINIO_PROBLEM_BUCKET", "rin-problems"))))
+		store := objectstore.NewMinIOUploadSigner(client, env("RIN_MINIO_PROBLEM_BUCKET", "rin-problems"))
+		options = append(options, intake.WithUploadSigner(store), intake.WithTextObjectWriter(store))
 		log.Print("rin problem-service using MinIO upload signer")
 	}
 

@@ -34,6 +34,9 @@ assertIncludes("apps/web/app/page.tsx", page, [
   "ProblemIntakePanel",
   "SubmissionPanel",
   "OJShell",
+  "useRouter",
+  "openRandomProblem",
+  "router.push(`/problems/${randomProblem.id}`)",
   "rin-hero-strip",
   "home.heroTitle",
   "home.upcomingContests",
@@ -48,6 +51,31 @@ assertIncludes("apps/web/app/problems/page.tsx", problemsPage, [
   "problems.allProblems",
   "filteredProblems",
   "problems.difficultyAll",
+]);
+
+const problemSetsPage = readRequired("apps/web/app/problemsets/page.tsx");
+assertIncludes("apps/web/app/problemsets/page.tsx", problemSetsPage, [
+  "ProblemSetsPage",
+  "rin-public-problemsets",
+  "createProblemSet",
+  "writeProblemSets",
+  "parseProblemIds",
+  "Public Problem Sets",
+  "发布公开题单",
+  "/problems/${problemId}",
+  "localStorage",
+]);
+
+const problemTable = readRequired("apps/web/components/problem-table.tsx");
+assertIncludes("apps/web/components/problem-table.tsx", problemTable, [
+  "pageSize",
+  "pageItems",
+  "totalPages",
+  "setPage",
+  "ChevronLeft",
+  "ChevronRight",
+  "disabled={safePage <= 1}",
+  "disabled={safePage >= totalPages}",
 ]);
 
 const contestsPage = readRequired("apps/web/app/contests/page.tsx");
@@ -78,6 +106,8 @@ const registerPage = readRequired("apps/web/app/register/page.tsx");
 assertIncludes("apps/web/app/register/page.tsx", registerPage, [
   "RegisterPage",
   "registerUser",
+  "setAuthSession",
+  "window.location.assign(\"/problems\")",
   "Create account",
   "PostgreSQL",
 ]);
@@ -86,6 +116,9 @@ const loginPage = readRequired("apps/web/app/login/page.tsx");
 assertIncludes("apps/web/app/login/page.tsx", loginPage, [
   "LoginPage",
   "loginUser",
+  "setAuthSession",
+  "useEffect",
+  "window.location.assign(\"/problems\")",
   "Sign in",
   "/register",
 ]);
@@ -95,6 +128,10 @@ assertIncludes("apps/web/app/discuss/page.tsx", discussPage, [
   "OJShell",
   "discussPosts",
   "renderMarkdownPreview",
+  "publishPost",
+  "rin-discuss-posts",
+  "localStorage",
+  "Published. It is now at the top of the board.",
   "Markdown / LaTeX",
   "/problems/${selectedProblemId}",
   "dangerouslySetInnerHTML",
@@ -105,8 +142,14 @@ assertIncludes("apps/web/app/problems/[problemId]/page.tsx", problemDetailPage, 
   "ProblemDetailPage",
   "problem.statement",
   "problem.sampleInput",
+  "estimateAcceptedCount",
+  "parseCompactCount",
+  "problem.submissions",
   "input-output",
+  "copySample",
+  "navigator.clipboard.writeText",
   "rin-soft-button",
+  "MessagesSquare",
   "ListChecks",
   "problem.recentSubmissions",
   "problem.relatedContest",
@@ -116,6 +159,10 @@ assertIncludes("apps/web/app/problems/[problemId]/page.tsx", problemDetailPage, 
 const userProfilePage = readRequired("apps/web/app/users/[username]/page.tsx");
 assertIncludes("apps/web/app/users/[username]/page.tsx", userProfilePage, [
   "UserProfilePage",
+  "ProfileAvatar",
+  "rin-profile-avatar",
+  "setSessionAvatarUrl",
+  "FileReader",
   "profile.heatmap",
   "heatmapDateRange",
   "heatmapMonthLabels",
@@ -128,6 +175,9 @@ assertIncludes("apps/web/app/users/[username]/page.tsx", userProfilePage, [
   "aria-label",
   "profile.recentSubmissions",
   "userProfiles",
+  "createDefaultProfile",
+  "还没有个人简介",
+  "New Solver",
 ]);
 
 const statusPage = readRequired("apps/web/app/status/page.tsx");
@@ -135,8 +185,17 @@ assertIncludes("apps/web/app/status/page.tsx", statusPage, [
   "status.recentSubmissions",
   "VerdictBadge",
   "status.refresh",
-  "filteredJudgements",
+  "filteredSubmissions",
+  "listSubmissions",
   "status.allVerdicts",
+]);
+
+const verdictBadge = readRequired("apps/web/components/verdict-badge.tsx");
+assertIncludes("apps/web/components/verdict-badge.tsx", verdictBadge, [
+  "AlertTriangle",
+  "Clock3",
+  "XCircle",
+  "border-emerald-100",
 ]);
 
 const shell = readRequired("apps/web/components/oj-shell.tsx");
@@ -146,13 +205,31 @@ assertIncludes("apps/web/components/oj-shell.tsx", shell, [
   "LanguageSwitcher",
   "rin-petal-field",
   "shell.tagline",
-  "/users/rin_admin",
+  "/users/${displayName}",
   "/login",
   "/register",
   "aria-current",
   "usePathname",
+  "isAuthenticated",
+  "displayName",
+  "avatarUrl",
+  "rounded-full",
   "Primary navigation",
   "navItems",
+]);
+
+const sessionStore = readRequired("apps/web/lib/use-session-store.ts");
+assertIncludes("apps/web/lib/use-session-store.ts", sessionStore, [
+  "setAuthSession",
+  "rin-session",
+  "LooseAuthSessionResponse",
+  "access_token",
+  "accessToken",
+  "refreshToken",
+  "setAvatarUrl",
+  "avatarUrl",
+  "isAuthenticated",
+  "localStorage",
 ]);
 
 const animatedSurface = readRequired("apps/web/components/animated-surface.tsx");
@@ -178,6 +255,7 @@ assertIncludes("apps/web/lib/i18n.ts", i18n, [
   "zh-CN",
   "en-US",
   "nav.problems",
+  "nav.problemsets",
   "shell.tagline",
   "submission.submit",
   "contests.title",
@@ -196,6 +274,7 @@ assertIncludes("apps/web/lib/use-locale-store.ts", localeStore, [
 const mockOJData = readRequired("apps/web/lib/mock-oj-data.ts");
 assertIncludes("apps/web/lib/mock-oj-data.ts", mockOJData, [
   "/problems",
+  "/problemsets",
   "/contests",
   "/status",
   "/ranking",
@@ -257,7 +336,13 @@ assertIncludes("apps/web/components/submission-panel.tsx", submission, [
   "createSubmissionEventSocket",
   "submission.timeline",
   "JudgeProgress",
+  "failureStepByStatus",
+  "status === \"ready\"",
   "Loader2",
+  "copySourceCode",
+  "resetStarterCode",
+  "insertFastIO",
+  "navigator.clipboard.writeText",
   "languageId",
   "supportedLanguages",
 ]);

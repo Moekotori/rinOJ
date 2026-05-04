@@ -22,6 +22,10 @@ func (c *GRPCClient) ValidateProblemImport(ctx context.Context, req *problemv1.V
 	return c.client.ValidateProblemImport(ctx, req)
 }
 
+func (c *GRPCClient) CreateInlineDraft(ctx context.Context, req *problemv1.CreateInlineDraftRequest) (*problemv1.CreateInlineDraftResponse, error) {
+	return c.client.CreateInlineDraft(ctx, req)
+}
+
 func (c *GRPCClient) TeacherQuickUpload(ctx context.Context, req *problemv1.TeacherQuickUploadRequest) (*problemv1.ProblemDraft, error) {
 	return c.client.TeacherQuickUpload(ctx, req)
 }
